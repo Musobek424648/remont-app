@@ -5,7 +5,6 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# Baza papkasi va fayllar manzili
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 OBJECTS_FILE = os.path.join(DATA_DIR, 'objects.txt')
@@ -46,6 +45,47 @@ def handle_objects():
                 objects = [{'nomi': line.strip()} for line in f if line.strip()]
         return jsonify(objects)
 
+@app.route('/api/objects/edit', methods=['POST'])
+def edit_object():
+    init_db()
+    data = request.json
+    old_name = data.get('old_name', '').strip()
+    new_name = data.get('new_name', '').strip()
+
+    if not old_name or not new_name:
+        return jsonify({'error': 'Ma`lumot to`liq emas'}), 400
+
+    # 1. objects.txt faylida nomni yangilash
+    if os.path.exists(OBJECTS_FILE):
+        with open(OBJECTS_FILE, 'r', encoding='utf-8') as f:
+            lines = [line.strip() for line in f if line.strip()]
+        
+        updated_lines = [new_name if line == old_name else line for line in lines]
+        
+        with open(OBJECTS_FILE, 'w', encoding='utf-8') as f:
+            for line in updated_lines:
+                f.write(line + '\n')
+
+    # 2. expenses.csv faylidagi ushbu ob'ekt xarajatlarini yangilash
+    if os.path.exists(EXPENSES_FILE):
+        rows = []
+        with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+            if header:
+                rows.append(header)
+            for row in reader:
+                if row and len(row) >= 3:
+                    if row[0] == old_name:
+                        row[0] = new_name
+                    rows.append(row)
+        
+        with open(EXPENSES_FILE, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerows(rows)
+
+    return jsonify({'status': 'ok'})
+
 @app.route('/api/expenses', methods=['POST'])
 def add_expense():
     init_db()
@@ -72,20 +112,6 @@ def get_expenses(obekt_nomi):
                 if row.get('obekt') == obekt_nomi:
                     expenses.append({'nomi': row['nomi'], 'summa': int(row['summa'])})
     return jsonify(expenses)
-
-@app.route('/api/report', methods=['GET'])
-def get_report():
-    init_db()
-    report = {}
-    if os.path.exists(EXPENSES_FILE):
-        with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                obekt = row.get('obekt')
-                summa = int(row.get('summa', 0))
-                report[obekt] = report.get(obekt, 0) + summa
-    result = [{'obekt': k, 'summa': v} for k, v in report.items()]
-    return jsonify(result)
 
 @app.route('/download/excel')
 def download_excel():
