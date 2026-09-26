@@ -11,8 +11,7 @@ OBJECTS_FILE = os.path.join(DATA_DIR, 'objects.txt')
 EXPENSES_FILE = os.path.join(DATA_DIR, 'expenses.csv')
 
 def init_db():
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(OBJECTS_FILE):
         with open(OBJECTS_FILE, 'w', encoding='utf-8') as f:
             pass
@@ -31,8 +30,8 @@ def index():
 def handle_objects():
     init_db()
     if request.method == 'POST':
-        data = request.json
-        nomi = data.get('nomi', '').strip()
+        data = request.get_json(force=True) or {}
+        nomi = str(data.get('nomi', '')).strip()
         if nomi:
             with open(OBJECTS_FILE, 'a', encoding='utf-8') as f:
                 f.write(nomi + '\n')
@@ -48,25 +47,21 @@ def handle_objects():
 @app.route('/api/objects/edit', methods=['POST'])
 def edit_object():
     init_db()
-    data = request.json
-    old_name = data.get('old_name', '').strip()
-    new_name = data.get('new_name', '').strip()
+    data = request.get_json(force=True) or {}
+    old_name = str(data.get('old_name', '')).strip()
+    new_name = str(data.get('new_name', '')).strip()
 
     if not old_name or not new_name:
         return jsonify({'error': 'Ma`lumot to`liq emas'}), 400
 
-    # 1. objects.txt faylida nomni yangilash
     if os.path.exists(OBJECTS_FILE):
         with open(OBJECTS_FILE, 'r', encoding='utf-8') as f:
             lines = [line.strip() for line in f if line.strip()]
-        
         updated_lines = [new_name if line == old_name else line for line in lines]
-        
         with open(OBJECTS_FILE, 'w', encoding='utf-8') as f:
             for line in updated_lines:
                 f.write(line + '\n')
 
-    # 2. expenses.csv faylidagi ushbu ob'ekt xarajatlarini yangilash
     if os.path.exists(EXPENSES_FILE):
         rows = []
         with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
@@ -79,7 +74,6 @@ def edit_object():
                     if row[0] == old_name:
                         row[0] = new_name
                     rows.append(row)
-        
         with open(EXPENSES_FILE, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerows(rows)
@@ -89,17 +83,17 @@ def edit_object():
 @app.route('/api/expenses', methods=['POST'])
 def add_expense():
     init_db()
-    data = request.json
-    obekt = data.get('obekt')
-    nomi = data.get('nomi')
-    summa = data.get('summa')
+    data = request.get_json(force=True) or {}
+    obekt = str(data.get('obekt', '')).strip()
+    nomi = str(data.get('nomi', '')).strip()
+    summa = str(data.get('summa', '')).strip()
     
     if obekt and nomi and summa:
         with open(EXPENSES_FILE, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([obekt, nomi, summa])
         return jsonify({'status': 'ok'})
-    return jsonify({'error': 'Noto`g`ri ma`lumot'}), 400
+    return jsonify({'error': 'Ma`lumotlar to`liq kiritilmadi'}), 400
 
 @app.route('/api/expenses/<path:obekt_nomi>', methods=['GET'])
 def get_expenses(obekt_nomi):
@@ -110,7 +104,11 @@ def get_expenses(obekt_nomi):
             reader = csv.DictReader(f)
             for row in reader:
                 if row.get('obekt') == obekt_nomi:
-                    expenses.append({'nomi': row['nomi'], 'summa': int(row['summa'])})
+                    try:
+                        val = int(float(row.get('summa', 0)))
+                    except:
+                        val = 0
+                    expenses.append({'nomi': row.get('nomi', ''), 'summa': val})
     return jsonify(expenses)
 
 @app.route('/download/excel')
