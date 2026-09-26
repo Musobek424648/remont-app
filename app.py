@@ -61,15 +61,15 @@ def add_expense():
 @app.route('/api/expenses_by_param', methods=['GET'])
 def get_expenses_param():
     init_db()
-    obekt_nomi = request.args.get('obekt', '').strip()
+    obekt_nomi = request.args.get('obekt', '').strip().lower()
     expenses = []
     
     if os.path.exists(EXPENSES_FILE):
         with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                row_obekt = str(row.get('obekt', '')).strip()
-                if row_obekt.lower() == obekt_nomi.lower():
+                row_obekt = str(row.get('obekt', '')).strip().lower()
+                if row_obekt == obekt_nomi:
                     raw_sum = str(row.get('summa', '0')).strip()
                     try:
                         val = int(float(raw_sum))
@@ -91,7 +91,7 @@ def download_excel():
     ws = wb.active
     ws.title = "Xarajatlar"
     
-    ws.append(['Ob'ekt', 'Xarajat Nomi', 'Summa'])
+    ws.append(['Obekt', 'Xarajat Nomi', 'Summa'])
 
     if os.path.exists(EXPENSES_FILE):
         with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
