@@ -98,6 +98,7 @@
     }
 
     function loadExp() {
+        if (!currentObj) return;
         fetch('/api/expenses_by_param?obekt=' + encodeURIComponent(currentObj))
             .then(res => res.json())
             .then(data => {
@@ -106,18 +107,24 @@
                 div.innerHTML = "";
                 let total = 0;
 
+                if (!data || data.length === 0) {
+                    div.innerHTML = "<p style='color: #777;'>Bu ob'ektga hali xarajat kiritilmagan.</p>";
+                    totalDiv.innerText = "Jami: 0 so'm";
+                    return;
+                }
+
                 data.forEach(item => {
                     let s = parseInt(item.summa) || 0;
                     total += s;
                     div.innerHTML += `
                         <div class="item">
                             <span>${item.nomi}</span>
-                            <b>${s} so'm</b>
+                            <b>${s.toLocaleString()} so'm</b>
                         </div>
                     `;
                 });
 
-                totalDiv.innerText = "Jami: " + total + " so'm";
+                totalDiv.innerText = "Jami: " + total.toLocaleString() + " so'm";
             });
     }
 
