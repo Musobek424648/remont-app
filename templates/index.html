@@ -1,126 +1,202 @@
-import os
-import csv
-from flask import Flask, render_template, request, jsonify, send_file
-import pandas as pd
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remont Xarajatlari</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2, h3, h4 { color: #333; }
+        input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        button:hover { background-color: #218838; }
+        .btn-blue { background-color: #007bff; }
+        .btn-blue:hover { background-color: #0069d9; }
+        .btn-warning { background-color: #ffc107; color: #212529; }
+        .btn-warning:hover { background-color: #e0a800; }
+        .item { padding: 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .box { border: 1px solid #ccc; padding: 15px; margin-top: 15px; border-radius: 5px; }
+        .actions { display: flex; gap: 5px; }
+        .total-box { margin-top: 10px; padding: 10px; background: #e9ecef; border-radius: 4px; text-align: right; font-weight: bold; }
+    </style>
+</head>
+<body>
 
-app = Flask(__name__)
+<div class="container">
+    <h2>🏗️ Remont Xarajatlari</h2>
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, 'data')
-OBJECTS_FILE = os.path.join(DATA_DIR, 'objects.txt')
-EXPENSES_FILE = os.path.join(DATA_DIR, 'expenses.csv')
+    <!-- Ob'ekt qo'shish -->
+    <div class="box">
+        <h3>Yangi Ob'ekt Qo'shish</h3>
+        <input type="text" id="objInput" placeholder="Ob'ekt nomi (masalan: Yunusobod)">
+        <button class="btn-blue" onclick="addObj()">Ob'ektni Saqlash</button>
+    </div>
 
-def init_db():
-    os.makedirs(DATA_DIR, exist_ok=True)
-    if not os.path.exists(OBJECTS_FILE):
-        with open(OBJECTS_FILE, 'w', encoding='utf-8') as f:
-            pass
-    if not os.path.exists(EXPENSES_FILE):
-        with open(EXPENSES_FILE, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['obekt', 'nomi', 'summa'])
+    <!-- Ob'ektlar ro'yxati -->
+    <div class="box">
+        <h3>Ob'ektlar Ro'yxati</h3>
+        <div id="objList">Yuklanmoqda...</div>
+    </div>
 
-init_db()
+    <!-- Xarajat qo'shish va ko'rish oynasi -->
+    <div id="expenseBox" class="box" style="display:none;">
+        <h3 id="selectedObjTitle" style="color: #007bff;"></h3>
+        
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+            <h4>Yangi xarajat kiritish:</h4>
+            <input type="text" id="expName" placeholder="Xarajat nomi (masalan: Sement)">
+            <input type="number" id="expSum" placeholder="Summa (so'm)">
+            <button onclick="addExp()">+ Xarajatni Saqlash</button>
+        </div>
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+        <h4>Kiritilgan xarajatlar ro'yxati:</h4>
+        <div id="expList"></div>
+        <div id="totalSum" class="total-box">Jami: 0 so'm</div>
+    </div>
 
-@app.route('/api/objects', methods=['GET', 'POST'])
-def handle_objects():
-    init_db()
-    if request.method == 'POST':
-        data = request.get_json(force=True) or {}
-        nomi = str(data.get('nomi', '')).strip()
-        if nomi:
-            with open(OBJECTS_FILE, 'a', encoding='utf-8') as f:
-                f.write(nomi + '\n')
-            return jsonify({'status': 'ok'})
-        return jsonify({'error': 'Nomi bo`sh'}), 400
-    else:
-        objects = []
-        if os.path.exists(OBJECTS_FILE):
-            with open(OBJECTS_FILE, 'r', encoding='utf-8') as f:
-                objects = [{'nomi': line.strip()} for line in f if line.strip()]
-        return jsonify(objects)
+    <!-- Excel yuklash -->
+    <div class="box" style="text-align: center;">
+        <a href="/download/excel" style="text-decoration: none;">
+            <button class="btn-blue">📥 Excel Hisobotni Yuklab Olish</button>
+        </a>
+    </div>
+</div>
 
-@app.route('/api/objects/edit', methods=['POST'])
-def edit_object():
-    init_db()
-    data = request.get_json(force=True) or {}
-    old_name = str(data.get('old_name', '')).strip()
-    new_name = str(data.get('new_name', '')).strip()
+<script>
+    let currentObj = "";
 
-    if not old_name or not new_name:
-        return jsonify({'error': 'Ma`lumot to`liq emas'}), 400
+    window.onload = loadObjs;
 
-    if os.path.exists(OBJECTS_FILE):
-        with open(OBJECTS_FILE, 'r', encoding='utf-8') as f:
-            lines = [line.strip() for line in f if line.strip()]
-        updated_lines = [new_name if line == old_name else line for line in lines]
-        with open(OBJECTS_FILE, 'w', encoding='utf-8') as f:
-            for line in updated_lines:
-                f.write(line + '\n')
+    function loadObjs() {
+        fetch('/api/objects')
+            .then(r => r.json())
+            .then(data => {
+                let div = document.getElementById('objList');
+                div.innerHTML = "";
+                if(!data || data.length === 0) {
+                    div.innerHTML = "<p>Hali ob'ektlar qo'shilmadi.</p>";
+                    return;
+                }
+                data.forEach(item => {
+                    let encodedName = encodeURIComponent(item.nomi);
+                    div.innerHTML += `<div class="item">
+                        <span><b>${item.nomi}</b></span>
+                        <div class="actions">
+                            <button style="width:auto; padding:5px 10px;" class="btn-warning" onclick="editObj('${item.nomi.replace(/'/g, "\\'")}')">✏️ Nomi</button>
+                            <button style="width:auto; padding:5px 10px;" onclick="selectObj('${item.nomi.replace(/'/g, "\\'")}')">Xarajatlar</button>
+                        </div>
+                    </div>`;
+                });
+            });
+    }
 
-    if os.path.exists(EXPENSES_FILE):
-        rows = []
-        with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
-            header = next(reader, None)
-            if header:
-                rows.append(header)
-            for row in reader:
-                if row and len(row) >= 3:
-                    if row[0] == old_name:
-                        row[0] = new_name
-                    rows.append(row)
-        with open(EXPENSES_FILE, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerows(rows)
+    function addObj() {
+        let nameInput = document.getElementById('objInput');
+        let name = nameInput.value.trim();
+        if(!name) return alert("Nom kiriting!");
+        
+        fetch('/api/objects', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({nomi: name})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.error) {
+                alert(data.error);
+            } else {
+                nameInput.value = "";
+                loadObjs();
+            }
+        });
+    }
 
-    return jsonify({'status': 'ok'})
+    function editObj(oldName) {
+        let newName = prompt("Yangi ob'ekt nomini kiriting:", oldName);
+        if(!newName || newName.trim() === "" || newName.trim() === oldName) return;
 
-@app.route('/api/expenses', methods=['POST'])
-def add_expense():
-    init_db()
-    data = request.get_json(force=True) or {}
-    obekt = str(data.get('obekt', '')).strip()
-    nomi = str(data.get('nomi', '')).strip()
-    summa = str(data.get('summa', '')).strip()
-    
-    if obekt and nomi and summa:
-        with open(EXPENSES_FILE, 'a', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow([obekt, nomi, summa])
-        return jsonify({'status': 'ok'})
-    return jsonify({'error': 'Ma`lumotlar to`liq kiritilmadi'}), 400
+        fetch('/api/objects/edit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({old_name: oldName, new_name: newName.trim()})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.error) {
+                alert(data.error);
+            } else {
+                if(currentObj === oldName) {
+                    currentObj = newName.trim();
+                    document.getElementById('selectedObjTitle').innerText = "Ob'ekt: " + currentObj;
+                }
+                loadObjs();
+            }
+        });
+    }
 
-@app.route('/api/expenses_by_param', methods=['GET'])
-def get_expenses_param():
-    init_db()
-    obekt_nomi = request.args.get('obekt', '').strip()
-    expenses = []
-    if os.path.exists(EXPENSES_FILE):
-        with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('obekt', '').strip() == obekt_nomi:
-                    try:
-                        val = int(float(row.get('summa', 0)))
-                    except:
-                        val = 0
-                    expenses.append({'nomi': row.get('nomi', ''), 'summa': val})
-    return jsonify(expenses)
+    function selectObj(name) {
+        currentObj = name;
+        document.getElementById('selectedObjTitle').innerText = "Ob'ekt: " + name;
+        document.getElementById('expenseBox').style.display = "block";
+        loadExp();
+    }
 
-@app.route('/download/excel')
-def download_excel():
-    init_db()
-    excel_path = os.path.join(DATA_DIR, 'hisobot.xlsx')
-    if os.path.exists(EXPENSES_FILE):
-        df = pd.read_csv(EXPENSES_FILE)
-        df.to_excel(excel_path, index=False)
-        return send_file(excel_path, as_attachment=True)
-    return "Fayl topilmadi", 404
+    function loadExp() {
+        if (!currentObj) return;
+        fetch('/api/expenses_by_param?obekt=' + encodeURIComponent(currentObj))
+            .then(r => r.json())
+            .then(data => {
+                let div = document.getElementById('expList');
+                let totalDiv = document.getElementById('totalSum');
+                div.innerHTML = "";
+                let total = 0;
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+                if(!data || data.length === 0) {
+                    div.innerHTML = "<p style='color: #777;'>Hali ushbu ob'ektga xarajat kiritilmadi.</p>";
+                    totalDiv.innerText = "Jami: 0 so'm";
+                    return;
+                }
+
+                data.forEach(item => {
+                    let sumVal = Number(item.summa) || 0;
+                    total += sumVal;
+                    div.innerHTML += `<div class="item">
+                        <span>${item.nomi}</span> 
+                        <b>${sumVal.toLocaleString()} so'm</b>
+                    </div>`;
+                });
+
+                totalDiv.innerText = "Jami: " + total.toLocaleString() + " so'm";
+            })
+            .catch(err => console.error("Xatolik:", err));
+    }
+
+    function addExp() {
+        let nameInput = document.getElementById('expName');
+        let sumInput = document.getElementById('expSum');
+        let name = nameInput.value.trim();
+        let sum = sumInput.value.trim();
+
+        if(!name || !sum) return alert("Xarajat nomi va summasini kiriting!");
+
+        fetch('/api/expenses', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({obekt: currentObj, nomi: name, summa: sum})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.error) {
+                alert(data.error);
+            } else {
+                nameInput.value = "";
+                sumInput.value = "";
+                loadExp();
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
