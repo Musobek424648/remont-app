@@ -25,7 +25,7 @@ def handle_objects():
     init_files()
     if request.method == 'POST':
         data = request.get_json() or {}
-        nomi = data.get('nomi', '').strip()
+        nomi = str(data.get('nomi', '')).strip()
         if nomi:
             with open(OBJECTS_FILE, 'a', encoding='utf-8') as f:
                 f.write(nomi + '\n')
@@ -45,9 +45,9 @@ def handle_objects():
 def add_expense():
     init_files()
     data = request.get_json() or {}
-    obekt = data.get('obekt', '').strip()
-    nomi = data.get('nomi', '').strip()
-    summa = data.get('summa', '0').strip()
+    obekt = str(data.get('obekt', '')).strip()
+    nomi = str(data.get('nomi', '')).strip()
+    summa = str(data.get('summa', '0')).strip()
 
     if obekt and nomi:
         with open(EXPENSES_FILE, 'a', newline='', encoding='utf-8') as f:
@@ -56,22 +56,25 @@ def add_expense():
 
     return jsonify({'status': 'ok'})
 
-# Tanlangan ob'ekt xarajatlarini ko'rsatish
+# Tanlangan ob'ekt xarajatlarini ekranga chiqarish (MUAMMO SHU YERDA HAL ETILDI)
 @app.route('/api/expenses_by_param', methods=['GET'])
 def get_expenses_param():
     init_files()
-    obekt_nomi = request.args.get('obekt', '').strip()
+    obekt_nomi = request.args.get('obekt', '').strip().lower()
     expenses = []
 
     if os.path.exists(EXPENSES_FILE):
         with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
+            reader = csv.reader(f)
+            header = next(reader, None)  # Sarlavhani o'tkazib yuboramiz
             for row in reader:
-                if row.get('obekt', '').strip() == obekt_nomi:
-                    expenses.append({
-                        'nomi': row.get('nomi', ''),
-                        'summa': row.get('summa', '0')
-                    })
+                if len(row) >= 3:
+                    row_obekt = str(row[0]).strip().lower()
+                    if row_obekt == obekt_nomi:
+                        expenses.append({
+                            'nomi': str(row[1]).strip(),
+                            'summa': str(row[2]).strip()
+                        })
 
     return jsonify(expenses)
 
