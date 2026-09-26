@@ -75,7 +75,7 @@ def handle_expenses():
 
         if obekt and nomi:
             try:
-                # created_at ni yubormaymiz, chunki Supabase o'zi avtomatik now() qo'yadi
+                # created_at ni yubormaymiz, Supabase o'zi avtomatik vaqt qo'yadi
                 supabase.table('expenses').insert({
                     'obekt': obekt, 
                     'nomi': nomi, 
@@ -116,15 +116,34 @@ def handle_expenses():
                 return jsonify({'status': 'error', 'message': str(e)}), 500
         return jsonify({'status': 'invalid data'}), 400
 
-@app.route('/api/expenses_by_param', methods=['GET'])
-def get_expenses_param():
-    obekt_nomi = request.args.get('obekt', '').strip()
+@app.route('/api/expenses/<path:obekt_nomi>', methods=['GET'])
+def get_object_expenses(obekt_nomi):
     try:
-        # created_at ustuni bazadan o'qib olinishini ta'minlaymiz
-        res = supabase.table('expenses').select('id, nomi, summa, created_at').ilike('obekt', obekt_nomi).order('id', desc=True).execute()
+        # created_at ustunini ham bazadan o'qib olamiz
+        res = supabase.table('expenses').select('id, nomi, summa, created_at').eq('obekt', obekt_nomi).order('id', desc=True).execute()
         return jsonify(res.data)
     except Exception as e:
         print("Error fetching expenses:", e)
+        return jsonify([])
+
+@app.route('/api/report', methods=['GET'])
+def get_report():
+    try:
+        res = supabase.table('expenses').select('obekt, summa').execute()
+        data = res.data or []
+        
+        # Ob'ektlar kesimida summalarni guruhlash
+        totals = {}
+        for item in data:
+            obj = item.get('obekt')
+            val = item.get('summa', 0)
+            if obj:
+                totals[obj] = totals.get(obj, 0) + val
+                
+        report_data = [{'obekt': k, 'summa': v} for k, v in totals.items()]
+        return jsonify(report_data)
+    except Exception as e:
+        print("Error generating report:", e)
         return jsonify([])
 
 if __name__ == '__main__':
