@@ -2,3 +2,4 @@ Flask
 supabase
 pandas
 openpyxl
+gunicorn
