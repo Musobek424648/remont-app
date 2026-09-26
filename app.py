@@ -75,7 +75,12 @@ def handle_expenses():
 
         if obekt and nomi:
             try:
-                supabase.table('expenses').insert({'obekt': obekt, 'nomi': nomi, 'summa': summa}).execute()
+                # created_at ni yubormaymiz, chunki Supabase o'zi avtomatik now() qo'yadi
+                supabase.table('expenses').insert({
+                    'obekt': obekt, 
+                    'nomi': nomi, 
+                    'summa': summa
+                }).execute()
             except Exception as e:
                 print("Error inserting expense:", e)
         return jsonify({'status': 'ok'})
@@ -115,7 +120,8 @@ def handle_expenses():
 def get_expenses_param():
     obekt_nomi = request.args.get('obekt', '').strip()
     try:
-        res = supabase.table('expenses').select('id, nomi, summa').ilike('obekt', obekt_nomi).order('id', desc=True).execute()
+        # created_at ustuni bazadan o'qib olinishini ta'minlaymiz
+        res = supabase.table('expenses').select('id, nomi, summa, created_at').ilike('obekt', obekt_nomi).order('id', desc=True).execute()
         return jsonify(res.data)
     except Exception as e:
         print("Error fetching expenses:", e)
