@@ -5,17 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Remont Xarajatlari</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h2, h3, h4 { color: #333; }
-        input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f0f2f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #1a73e8; margin-top: 0; }
+        h3, h4 { color: #333; margin-top: 0; }
+        input { padding: 12px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+        button { padding: 12px; margin: 8px 0; width: 100%; background-color: #28a745; color: white; border: none; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.2s; }
         button:hover { background-color: #218838; }
-        .btn-blue { background-color: #007bff; }
-        .btn-blue:hover { background-color: #0069d9; }
-        .item { padding: 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-        .box { border: 1px solid #ccc; padding: 15px; margin-top: 15px; border-radius: 5px; }
-        .total-box { margin-top: 10px; padding: 10px; background: #e9ecef; border-radius: 4px; text-align: right; font-weight: bold; }
+        .btn-blue { background-color: #1a73e8; }
+        .btn-blue:hover { background-color: #1557b0; }
+        .box { border: 1px solid #e0e0e0; padding: 18px; margin-top: 18px; border-radius: 8px; background: #fafafa; }
+        .item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 6px; border-radius: 4px; }
+        .item:last-child { border-bottom: none; }
+        .total-box { margin-top: 15px; padding: 15px; background: #e8f0fe; border-radius: 6px; text-align: right; font-weight: bold; font-size: 18px; color: #1967d2; }
+        .obj-btn { width: auto; padding: 6px 14px; margin: 0; }
     </style>
 </head>
 <body>
@@ -36,11 +39,11 @@
         <div id="objList">Yuklanmoqda...</div>
     </div>
 
-    <!-- Xarajat qo'shish va ko'rish oynasi -->
-    <div id="expenseBox" class="box" style="display:none;">
-        <h3 id="selectedObjTitle" style="color: #007bff;"></h3>
+    <!-- Xarajatlar bloki -->
+    <div id="expenseBox" class="box" style="display:none; background: #fff; border: 2px solid #1a73e8;">
+        <h3 id="selectedObjTitle" style="color: #1a73e8;"></h3>
         
-        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+        <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #eee;">
             <h4>Yangi xarajat kiritish:</h4>
             <input type="text" id="expName" placeholder="Xarajat nomi (masalan: Sement)">
             <input type="number" id="expSum" placeholder="Summa (so'm)">
@@ -63,46 +66,44 @@
 <script>
     let currentObj = "";
 
-    window.onload = loadObjs;
+    document.addEventListener("DOMContentLoaded", function() {
+        loadObjs();
+    });
 
     function loadObjs() {
         fetch('/api/objects')
-            .then(r => r.json())
+            .then(res => res.json())
             .then(data => {
                 let div = document.getElementById('objList');
                 div.innerHTML = "";
                 if(!data || data.length === 0) {
-                    div.innerHTML = "<p>Hali ob'ektlar qo'shilmadi.</p>";
+                    div.innerHTML = "<p style='color: #888;'>Hali ob'ektlar qo'shilmadi.</p>";
                     return;
                 }
                 data.forEach(item => {
                     let name = item.nomi;
-                    let btn = document.createElement('button');
-                    btn.innerText = "Xarajatlar";
-                    btn.onclick = function() { selectObj(name); };
-                    
                     let d = document.createElement('div');
                     d.className = 'item';
-                    d.innerHTML = `<span><b>${name}</b></span>`;
-                    d.appendChild(btn);
+                    d.innerHTML = `<span><b>${name}</b></span>
+                                   <button class="btn-blue obj-btn" onclick="selectObj('${name.replace(/'/g, "\\'")}')">Xarajatlar</button>`;
                     div.appendChild(d);
                 });
             })
-            .catch(e => alert("Ob'ektlarni yuklashda xato: " + e));
+            .catch(err => console.error("Xatolik ob'ektlarni yuklashda:", err));
     }
 
     function addObj() {
         let nameInput = document.getElementById('objInput');
         let name = nameInput.value.trim();
-        if(!name) return alert("Nom kiriting!");
+        if(!name) return alert("Ob'ekt nomini kiriting!");
         
         fetch('/api/objects', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({nomi: name})
         })
-        .then(r => r.json())
-        .then(data => {
+        .then(res => res.json())
+        .then(() => {
             nameInput.value = "";
             loadObjs();
         });
@@ -110,7 +111,7 @@
 
     function selectObj(name) {
         currentObj = name;
-        document.getElementById('selectedObjTitle').innerText = "Ob'ekt: " + name;
+        document.getElementById('selectedObjTitle').innerText = "📍 Ob'ekt: " + name;
         document.getElementById('expenseBox').style.display = "block";
         loadExp();
     }
@@ -118,7 +119,7 @@
     function loadExp() {
         if (!currentObj) return;
         fetch('/api/expenses_by_param?obekt=' + encodeURIComponent(currentObj))
-            .then(r => r.json())
+            .then(res => res.json())
             .then(data => {
                 let div = document.getElementById('expList');
                 let totalDiv = document.getElementById('totalSum');
@@ -126,7 +127,7 @@
                 let total = 0;
 
                 if(!data || data.length === 0) {
-                    div.innerHTML = "<p style='color: #777;'>Hali ushbu ob'ektga xarajat kiritilmadi.</p>";
+                    div.innerHTML = "<p style='color: #888; text-align: center;'>Ushbu ob'ektga hali xarajat kiritilmagan.</p>";
                     totalDiv.innerText = "Jami: 0 so'm";
                     return;
                 }
@@ -136,13 +137,13 @@
                     total += sumVal;
                     div.innerHTML += `<div class="item">
                         <span>${item.nomi}</span> 
-                        <b>${sumVal} so'm</b>
+                        <b style="color: #28a745;">${sumVal.toLocaleString('uz-UZ')} so'm</b>
                     </div>`;
                 });
 
-                totalDiv.innerText = "Jami: " + total + " so'm";
+                totalDiv.innerText = "Jami: " + total.toLocaleString('uz-UZ') + " so me";
             })
-            .catch(e => alert("Xarajatlarni ko'rsatishda xato: " + e));
+            .catch(err => console.error("Xatolik xarajatlarni yuklashda:", err));
     }
 
     function addExp() {
@@ -158,8 +159,8 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({obekt: currentObj, nomi: name, summa: sum})
         })
-        .then(r => r.json())
-        .then(data => {
+        .then(res => res.json())
+        .then(() => {
             nameInput.value = "";
             sumInput.value = "";
             loadExp();
