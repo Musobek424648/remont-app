@@ -68,16 +68,34 @@
             background: rgba(51, 65, 85, 0.7);
             color: #fff;
         }
+
+        /* --- JADVAL (Oq fon, qora yozuv) --- */
+        .table-container {
+            border-radius: 12px;
+            overflow: hidden;
+        }
         .table {
-            color: #f8fafc;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            margin-bottom: 0;
         }
-        .table-striped > tbody > tr:nth-of-type(odd) {
-            background-color: rgba(255, 255, 255, 0.03);
-            color: #f8fafc;
+        .table th {
+            background-color: #e2e8f0 !important;
+            color: #0f172a !important;
+            font-weight: 700;
         }
-        .table-hover > tbody > tr:hover {
-            background-color: rgba(255, 255, 255, 0.06);
-            color: #fff;
+        .table td {
+            color: #000000 !important;
+            background-color: #ffffff !important;
+            vertical-align: middle;
+        }
+        .table-striped > tbody > tr:nth-of-type(odd) > * {
+            background-color: #f8fafc !important;
+            color: #000000 !important;
+        }
+        .table-hover > tbody > tr:hover > * {
+            background-color: #f1f5f9 !important;
+            color: #000000 !important;
         }
     </style>
 </head>
@@ -134,20 +152,28 @@
                     </div>
 
                     <div class="card p-4">
-                        <h6 class="mb-3 text-info">Xarajatlar tarixi</h6>
-                        <div class="table-responsive">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="text-info m-0">Xarajatlar tarixi</h6>
+                        </div>
+                        <div class="table-responsive table-container">
                             <table class="table table-striped table-hover align-middle">
                                 <thead>
                                     <tr>
-                                        <th class="text-secondary">Sana va Vaqt</th>
-                                        <th class="text-secondary">Xarajat Nomi</th>
-                                        <th class="text-end text-secondary">Summa (so'm)</th>
+                                        <th>Sana va Vaqt</th>
+                                        <th>Xarajat Nomi</th>
+                                        <th class="text-end">Summa (so'm)</th>
+                                        <th class="text-center" style="width: 120px;">Amallar</th>
                                     </tr>
                                 </thead>
                                 <tbody id="object-expenses-table-body">
                                     <!-- Xarajatlar jadval ko'rinishida shu yerga tushadi -->
                                 </tbody>
                             </table>
+                        </div>
+                        <!-- Avtomatik jami xarajat ko'rsatiladigan qism -->
+                        <div class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded text-dark fw-bold">
+                            <span>Jami Xarajat:</span>
+                            <span id="total-object-expense" class="text-success fs-5">0 so'm</span>
                         </div>
                     </div>
                 </div>
@@ -160,12 +186,12 @@
                         <h5 class="text-info m-0">Umumiy hisobot</h5>
                         <a href="/download/excel" class="btn btn-outline-success btn-sm">📥 Excel yuklab olish</a>
                     </div>
-                    <div class="table-responsive">
+                    <div class="table-responsive table-container">
                         <table class="table table-striped align-middle">
                             <thead>
                                 <tr>
-                                    <th class="text-secondary">Ob'ekt</th>
-                                    <th class="text-secondary">Jami Xarajat (so'm)</th>
+                                    <th>Ob'ekt</th>
+                                    <th class="text-end">Jami Xarajat (so'm)</th>
                                 </tr>
                             </thead>
                             <tbody id="report-table-body"></tbody>
@@ -236,11 +262,17 @@
                 .then(data => {
                     const tbody = document.getElementById("object-expenses-table-body");
                     tbody.innerHTML = "";
+                    let totalSum = 0;
+
                     if (!data || data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Hali xarajat yo`q</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Hali xarajat yo`q</td></tr>';
+                        document.getElementById("total-object-expense").innerText = "0 so'm";
                         return;
                     }
+
                     data.forEach(exp => {
+                        totalSum += Number(exp.summa || 0);
+
                         let dateStr = "-";
                         if (exp.created_at) {
                             const d = new Date(exp.created_at);
@@ -249,12 +281,19 @@
 
                         const tr = document.createElement("tr");
                         tr.innerHTML = `
-                            <td class="text-light opacity-75 small">${dateStr}</td>
-                            <td><strong class="text-white">${exp.nomi}</strong></td>
+                            <td class="text-secondary small">${dateStr}</td>
+                            <td><strong class="text-dark">${exp.nomi}</strong></td>
                             <td class="text-end text-success fw-bold">${Number(exp.summa).toLocaleString()} so'm</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editExpense(${exp.id}, '${exp.nomi}', ${exp.summa})">✏️</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteExpense(${exp.id})">🗑️</button>
+                            </td>
                         `;
                         tbody.appendChild(tr);
                     });
+
+                    // Jami summani avtomatik chiqarish
+                    document.getElementById("total-object-expense").innerText = totalSum.toLocaleString() + " so'm";
                 });
         }
 
@@ -280,6 +319,49 @@
             });
         }
 
+        function editExpense(id, oldNomi, oldSumma) {
+            const newNomi = prompt("Xarajat nomini o'zgartirish:", oldNomi);
+            if (newNomi === null) return;
+            const newSumma = prompt("Summani o'zgartirish:", oldSumma);
+            if (newSumma === null) return;
+
+            if (!newNomi.trim() || !newSumma.trim()) {
+                return alert("Ma'lumotlar bo'sh bo'lishi mumkin emas!");
+            }
+
+            fetch("/api/expenses", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id, nomi: newNomi.trim(), summa: newSumma.trim() })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    loadObjectExpenses(currentObject);
+                } else {
+                    alert("Xatolik yuz berdi!");
+                }
+            });
+        }
+
+        function deleteExpense(id) {
+            if (!confirm("Haqiqatan ham bu xarajatni o'chirmoqchimisiz?")) return;
+
+            fetch("/api/expenses", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    loadObjectExpenses(currentObject);
+                } else {
+                    alert("O'chirishda xatolik yuz berdi!");
+                }
+            });
+        }
+
         function loadReport() {
             fetch("/api/report")
                 .then(res => res.json())
@@ -292,7 +374,7 @@
                     }
                     data.forEach(row => {
                         const tr = document.createElement("tr");
-                        tr.innerHTML = `<td class="text-white">${row.obekt}</td><td><strong class="text-success">${Number(row.summa).toLocaleString()} so'm</strong></td>`;
+                        tr.innerHTML = `<td class="text-dark fw-bold">${row.obekt}</td><td class="text-end text-success fw-bold">${Number(row.summa).toLocaleString()} so'm</td>`;
                         tbody.appendChild(tr);
                     });
                 });
