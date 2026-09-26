@@ -4,19 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Remont Xarajatlari</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: sans-serif; }
-        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .nav-pills .nav-link.active { background-color: #0d6efd; }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            color: #f8fafc;
+            margin-bottom: 20px;
+        }
+        .form-control {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-radius: 10px;
+        }
+        .form-control:focus {
+            background: rgba(15, 23, 42, 0.8);
+            color: #fff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+        }
+        .form-control::placeholder { color: #94a3b8; }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .nav-pills .nav-link {
+            color: #94a3b8;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: #fff;
+        }
+        .list-group-item {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #f8fafc;
+            margin-bottom: 8px;
+            border-radius: 10px !important;
+            transition: all 0.2s;
+        }
+        .list-group-item:hover {
+            background: rgba(51, 65, 85, 0.7);
+            color: #fff;
+        }
+        .table {
+            color: #f8fafc;
+        }
+        .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: rgba(255, 255, 255, 0.03);
+            color: #f8fafc;
+        }
+        .table-hover > tbody > tr:hover {
+            background-color: rgba(255, 255, 255, 0.06);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
-    <div class="container py-4">
-        <h2 class="text-center mb-4">🏗️ Remont Xarajatlari</h2>
+    <div class="container py-5">
+        <h2 class="text-center mb-4 fw-bold">🏗️ Remont Xarajatlari</h2>
 
         <!-- Menyular -->
-        <ul class="nav nav-pills nav-justified mb-4" id="pills-tab" role="tablist">
+        <ul class="nav nav-pills nav-justified mb-4 p-1 card" id="pills-tab" role="tablist">
             <li class="nav-item">
                 <button class="nav-link active" id="pills-objects-tab" data-bs-toggle="pill" data-bs-target="#pills-objects" type="button">Mening Ob'ektlarim</button>
             </li>
@@ -28,16 +98,16 @@
         <div class="tab-content" id="pills-tabContent">
             <!-- Ob'ektlar bo'limi -->
             <div class="tab-pane fade show active" id="pills-objects">
-                <div class="card p-3">
-                    <h5>Yangi ob'ekt qo'shish</h5>
-                    <div class="input-group mb-3">
+                <div class="card p-4">
+                    <h5 class="mb-3 text-info">Yangi ob'ekt qo'shish</h5>
+                    <div class="input-group">
                         <input type="text" id="new-object-name" class="form-control" placeholder="Masalan: Yunusobod 4-uy">
-                        <button class="btn btn-primary" onclick="addObject()">Qo'shish</button>
+                        <button class="btn btn-primary px-4" onclick="addObject()">Qo'shish</button>
                     </div>
                 </div>
 
-                <div class="card p-3">
-                    <h5>Ob'ektlar ro'yxati</h5>
+                <div class="card p-4">
+                    <h5 class="mb-3 text-info">Ob'ektlar ro'yxati</h5>
                     <div id="objects-list" class="list-group">
                         <div class="text-muted">Yuklanmoqda...</div>
                     </div>
@@ -45,11 +115,11 @@
 
                 <!-- Tanlangan ob'ekt xarajatlari -->
                 <div id="selected-object-details" style="display: none;">
-                    <hr>
-                    <h4 id="current-object-title" class="text-primary"></h4>
+                    <hr class="border-secondary my-4">
+                    <h4 id="current-object-title" class="text-warning fw-bold mb-3"></h4>
                     
-                    <div class="card p-3 bg-light">
-                        <h6>Ushbu ob'ektga xarajat qo'shish</h6>
+                    <div class="card p-4 border-primary">
+                        <h6 class="mb-3 text-success">Ushbu ob'ektga xarajat qo'shish</h6>
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <input type="text" id="exp-name" class="form-control" placeholder="Xarajat nomi (masalan: Sement)">
@@ -63,15 +133,15 @@
                         </div>
                     </div>
 
-                    <div class="card p-3">
-                        <h6>Xarajatlar tarixi</h6>
+                    <div class="card p-4">
+                        <h6 class="mb-3 text-info">Xarajatlar tarixi</h6>
                         <div class="table-responsive">
                             <table class="table table-striped table-hover align-middle">
                                 <thead>
                                     <tr>
-                                        <th>Sana va Vaqt</th>
-                                        <th>Xarajat Nomi</th>
-                                        <th class="text-end">Summa (so'm)</th>
+                                        <th class="text-secondary">Sana va Vaqt</th>
+                                        <th class="text-secondary">Xarajat Nomi</th>
+                                        <th class="text-end text-secondary">Summa (so'm)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="object-expenses-table-body">
@@ -85,20 +155,22 @@
 
             <!-- Hisobot bo'limi -->
             <div class="tab-pane fade" id="pills-report">
-                <div class="card p-3">
+                <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5>Umumiy hisobot</h5>
-                        <a href="/download/excel" class="btn btn-outline-success">📥 Excel yuklab olish</a>
+                        <h5 class="text-info m-0">Umumiy hisobot</h5>
+                        <a href="/download/excel" class="btn btn-outline-success btn-sm">📥 Excel yuklab olish</a>
                     </div>
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Ob'ekt</th>
-                                <th>Jami Xarajat (so'm)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="report-table-body"></tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th class="text-secondary">Ob'ekt</th>
+                                    <th class="text-secondary">Jami Xarajat (so'm)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-table-body"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -123,7 +195,7 @@
                     data.forEach(obj => {
                         const btn = document.createElement("button");
                         btn.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center";
-                        btn.innerText = obj.nomi;
+                        btn.innerHTML = `<span>${obj.nomi}</span> <span class="badge bg-primary rounded-pill">Tanlash &rarr;</span>`;
                         btn.onclick = () => selectObject(obj.nomi);
                         list.appendChild(btn);
                     });
@@ -177,8 +249,8 @@
 
                         const tr = document.createElement("tr");
                         tr.innerHTML = `
-                            <td class="text-muted small">${dateStr}</td>
-                            <td><strong>${exp.nomi}</strong></td>
+                            <td class="text-light opacity-75 small">${dateStr}</td>
+                            <td><strong class="text-white">${exp.nomi}</strong></td>
                             <td class="text-end text-success fw-bold">${Number(exp.summa).toLocaleString()} so'm</td>
                         `;
                         tbody.appendChild(tr);
@@ -220,7 +292,7 @@
                     }
                     data.forEach(row => {
                         const tr = document.createElement("tr");
-                        tr.innerHTML = `<td>${row.obekt}</td><td><strong>${Number(row.summa).toLocaleString()} so'm</strong></td>`;
+                        tr.innerHTML = `<td class="text-white">${row.obekt}</td><td><strong class="text-success">${Number(row.summa).toLocaleString()} so'm</strong></td>`;
                         tbody.appendChild(tr);
                     });
                 });
