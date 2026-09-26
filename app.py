@@ -26,7 +26,6 @@ def handle_objects():
         return jsonify({'status': 'ok'})
 
     elif request.method == 'PUT':
-        # Obyekt nomini yangilash
         data = request.get_json() or {}
         old_nomi = str(data.get('old_nomi', '')).strip()
         new_nomi = str(data.get('new_nomi', '')).strip()
@@ -42,7 +41,6 @@ def handle_objects():
         return jsonify({'status': 'invalid data'}), 400
 
     elif request.method == 'DELETE':
-        # Obyektni va unga tegishli xarajatlarni o'chirish
         data = request.get_json() or {}
         nomi = str(data.get('nomi', '')).strip()
         if nomi:
@@ -63,35 +61,61 @@ def handle_objects():
             print("Error fetching objects:", e)
             return jsonify([])
 
-@app.route('/api/expenses', methods=['POST'])
-def add_expense():
-    data = request.get_json() or {}
-    obekt = str(data.get('obekt', '')).strip()
-    nomi = str(data.get('nomi', '')).strip()
-    raw_sum = str(data.get('summa', '0')).strip()
-    
-    try:
-        summa = int(float(raw_sum))
-    except (ValueError, TypeError):
-        summa = 0
-
-    if obekt and nomi:
+@app.route('/api/expenses', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def handle_expenses():
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        obekt = str(data.get('obekt', '')).strip()
+        nomi = str(data.get('nomi', '')).strip()
+        raw_sum = str(data.get('summa', '0')).strip()
         try:
-            supabase.table('expenses').insert({
-                'obekt': obekt,
-                'nomi': nomi,
-                'summa': summa
-            }).execute()
-        except Exception as e:
-            print("Error inserting expense:", e)
+            summa = int(float(raw_sum))
+        except (ValueError, TypeError):
+            summa = 0
 
-    return jsonify({'status': 'ok'})
+        if obekt and nomi:
+            try:
+                supabase.table('expenses').insert({'obekt': obekt, 'nomi': nomi, 'summa': summa}).execute()
+            except Exception as e:
+                print("Error inserting expense:", e)
+        return jsonify({'status': 'ok'})
+
+    elif request.method == 'PUT':
+        data = request.get_json() or {}
+        exp_id = data.get('id')
+        nomi = str(data.get('nomi', '')).strip()
+        raw_sum = str(data.get('summa', '0')).strip()
+        try:
+            summa = int(float(raw_sum))
+        except (ValueError, TypeError):
+            summa = 0
+
+        if exp_id and nomi:
+            try:
+                supabase.table('expenses').update({'nomi': nomi, 'summa': summa}).eq('id', exp_id).execute()
+                return jsonify({'status': 'ok'})
+            except Exception as e:
+                print("Error updating expense:", e)
+                return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'invalid data'}), 400
+
+    elif request.method == 'DELETE':
+        data = request.get_json() or {}
+        exp_id = data.get('id')
+        if exp_id:
+            try:
+                supabase.table('expenses').delete().eq('id', exp_id).execute()
+                return jsonify({'status': 'ok'})
+            except Exception as e:
+                print("Error deleting expense:", e)
+                return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'invalid data'}), 400
 
 @app.route('/api/expenses_by_param', methods=['GET'])
 def get_expenses_param():
     obekt_nomi = request.args.get('obekt', '').strip()
     try:
-        res = supabase.table('expenses').select('nomi, summa').ilike('obekt', obekt_nomi).order('id', desc=True).execute()
+        res = supabase.table('expenses').select('id, nomi, summa').ilike('obekt', obekt_nomi).order('id', desc=True).execute()
         return jsonify(res.data)
     except Exception as e:
         print("Error fetching expenses:", e)
