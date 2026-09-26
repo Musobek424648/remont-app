@@ -1,7 +1,6 @@
 import os
 from flask import Flask, render_template, request, jsonify
 from supabase import create_client, Client
-from datetime import datetime
 
 app = Flask(__name__)
 
@@ -76,14 +75,7 @@ def handle_expenses():
 
         if obekt and nomi:
             try:
-                # Avtomatik bugungi sana va vaqtni qo'shish
-                current_time = datetime.now().isoformat()
-                supabase.table('expenses').insert({
-                    'obekt': obekt, 
-                    'nomi': nomi, 
-                    'summa': summa,
-                    'created_at': current_time
-                }).execute()
+                supabase.table('expenses').insert({'obekt': obekt, 'nomi': nomi, 'summa': summa}).execute()
             except Exception as e:
                 print("Error inserting expense:", e)
         return jsonify({'status': 'ok'})
@@ -123,7 +115,7 @@ def handle_expenses():
 def get_expenses_param():
     obekt_nomi = request.args.get('obekt', '').strip()
     try:
-        res = supabase.table('expenses').select('id, nomi, summa, created_at').ilike('obekt', obekt_nomi).order('id', desc=True).execute()
+        res = supabase.table('expenses').select('id, nomi, summa').ilike('obekt', obekt_nomi).order('id', desc=True).execute()
         return jsonify(res.data)
     except Exception as e:
         print("Error fetching expenses:", e)
