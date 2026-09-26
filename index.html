@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remont Xarajatlari Boshqaruvi</title>
+    <style>
+        :root {
+            --primary-blue: #007bff;
+            --hover-blue: #0056b3;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .btn-blue {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            width: 100%;
+        }
+
+        .btn-blue:hover {
+            background-color: var(--hover-blue);
+        }
+
+        .objects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .object-btn {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            transition: transform 0.1s ease, background-color 0.2s ease;
+            text-align: center;
+        }
+
+        .object-btn:hover {
+            background-color: var(--hover-blue);
+            transform: translateY(-2px);
+        }
+
+        .excel-btn {
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .expense-box {
+            background-color: #eef5ff;
+            border: 1px solid #b6d4fe;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🏠 Remont Xarajatlari Tizimi</h1>
+
+    <!-- 1. Ob'ekt qo'shish -->
+    <div class="card">
+        <h2>🏠 Yangi Ob'ekt Qo'shish</h2>
+        <div class="form-group">
+            <input type="text" id="objectName" placeholder="Ob'ekt nomi (masalan: Yunusobod 4-uy)">
+        </div>
+        <button class="btn-blue" onclick="addObject()">Ob'ektni Saqlash</button>
+    </div>
+
+    <!-- 2. Ko'k tugmali Ob'ektlar menyusi -->
+    <div class="card">
+        <h2>📋 Mening Ob'ektlarim (Kirish uchun bosing)</h2>
+        <div id="objectsList" class="objects-grid">
+            <!-- Ko'k tugmalar JavaScript orqali yuklanadi -->
+        </div>
+    </div>
+
+    <!-- 3. Ob'ekt ichidagi xarajatlar va hisobotlar -->
+    <div class="card">
+        <h2 id="reportTitle">📊 Umumiy hisobot</h2>
+        <a href="/download/excel" class="excel-btn">📥 Excel hisobotni yuklab olish</a>
+        
+        <!-- Ob'ekt tanlanganda chiqadigan Xarajat qo'shish shakli -->
+        <div id="addExpenseSection" style="display: none;" class="expense-box">
+            <h3 id="selectedObjectHeader" style="margin-top:0;">➕ Xarajat Qo'shish</h3>
+            <div class="form-group">
+                <input type="text" id="expenseName" placeholder="Xarajat nomi (masalan: Sement)">
+            </div>
+            <div class="form-group">
+                <input type="number" id="expenseAmount" placeholder="Summa (masalan: 150000)">
+            </div>
+            <button class="btn-blue" onclick="addExpense()">Ushbu ob'ektga xarajat saqlash</button>
+        </div>
+
+        <div id="reportContent"></div>
+    </div>
+</div>
+
+<script>
+    let currentSelectedObject = '';
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadObjects();
+        loadGeneralReport();
+    });
+
+    async function loadObjects() {
+        const res = await fetch('/api/objects');
+        const objects = await res.json();
+        
+        const objectsList = document.getElementById('objectsList');
+        objectsList.innerHTML = '';
+
+        objects.forEach(obj => {
+            const btn = document.createElement('button');
+            btn.className = 'object-btn';
+            btn.innerText = `🏠 ${obj.nomi}`;
+            btn.onclick = () => selectObject(obj.nomi);
+            objectsList.appendChild(btn);
+        });
+    }
+
+    async function addObject() {
+        const nomi = document.getElementById('objectName').value;
+        if (!nomi) return alert("Ob'ekt nomini kiriting!");
+
+        const res = await fetch('/api/objects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nomi })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            alert(data.message);
+            document.getElementById('objectName').value = '';
+            loadObjects();
+        } else {
+            alert(data.error);
+        }
+    }
+
+    async function selectObject(obektNomi) {
+        currentSelectedObject = obektNomi;
+        
+        // Xarajat qo'shish bo'limini ko'rsatish
+        document.getElementById('addExpenseSection').style.display = 'block';
+        document.getElementById('selectedObjectHeader').innerText = `➕ "${obektNomi}" ob'ektiga xarajat qo'shish`;
+        document.getElementById('reportTitle').innerText = `🏠 ${obektNomi} xarajatlari`;
+
+        loadObjectExpenses(obektNomi);
+    }
+
+    async function addExpense() {
+        if (!currentSelectedObject) {
+            return alert("Iltimos, avval ob'ektni tanlang!");
+        }
+
+        const nomi = document.getElementById('expenseName').value;
+        const summa = document.getElementById('expenseAmount').value;
+
+        if (!nomi || !summa) return alert("Barcha maydonlarni to'ldiring!");
+
+        const res = await fetch('/api/expenses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ obekt: currentSelectedObject, nomi, summa })
+        });
+
+        if (res.ok) {
+            alert("Xarajat saqlandi!");
+            document.getElementById('expenseName').value = '';
+            document.getElementById('expenseAmount').value = '';
+            loadObjectExpenses(currentSelectedObject);
+        }
+    }
+
+    async function loadObjectExpenses(obektNomi) {
+        const res = await fetch(`/api/expenses/${encodeURIComponent(obektNomi)}`);
+        const expenses = await res.json();
+
+        const container = document.getElementById('reportContent');
+
+        if (expenses.length === 0) {
+            container.innerHTML = '<p>Bu ob\'ekt uchun hali xarajatlar kiritilmagan.</p>';
+            return;
+        }
+
+        let total = 0;
+        let html = '<table><tr><th>№</th><th>Xarajat</th><th>Summa</th></tr>';
+        expenses.forEach((exp, i) => {
+            total += exp.summa;
+            html += `<tr><td>${i + 1}</td><td>${exp.nomi}</td><td>${exp.summa.toLocaleString()} so'm</td></tr>`;
+        });
+        html += `</table><h3 style="color:red; text-align:right;">Jami: ${total.toLocaleString()} so'm</h3>`;
+        container.innerHTML = html;
+    }
+
+    async function loadGeneralReport() {
+        const res = await fetch('/api/report');
+        const report = await res.json();
+
+        document.getElementById('reportTitle').innerText = '📊 Umumiy hisobot';
+        document.getElementById('addExpenseSection').style.display = 'none';
+        const container = document.getElementById('reportContent');
+
+        if (report.length === 0) {
+            container.innerHTML = '<p>Hali xarajatlar yo\'q.</p>';
+            return;
+        }
+
+        let grandTotal = 0;
+        let html = '<table><tr><th>Ob\'ekt</th><th>Jami Summa</th></tr>';
+        report.forEach(row => {
+            grandTotal += row.summa;
+            html += `<tr><td>🏠 ${row.obekt}</td><td>${row.summa.toLocaleString()} so'm</td></tr>`;
+        });
+        html += `</table><h3 style="color:red; text-align:right;">Umumiy sarflangan: ${grandTotal.toLocaleString()} so'm</h3>`;
+        container.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>
