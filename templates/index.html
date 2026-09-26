@@ -87,8 +87,7 @@
                         </div>
                     </div>`;
                 });
-            })
-            .catch(err => console.error(err));
+            });
     }
 
     function addObj() {
@@ -140,9 +139,6 @@
         document.getElementById('selectedObjTitle').innerText = "Ob'ekt: " + name;
         document.getElementById('expenseBox').style.display = "block";
         loadExp();
-        
-        // Ekran tanlangan ob'ekt xarajatlariga avtomatik tushishi uchun:
-        document.getElementById('expenseBox').scrollIntoView({ behavior: 'smooth' });
     }
 
     function loadExp() {
@@ -170,8 +166,7 @@
                 });
 
                 totalDiv.innerText = "Jami: " + total.toLocaleString() + " so'm";
-            })
-            .catch(err => console.error(err));
+            });
     }
 
     function addExp() {
@@ -194,7 +189,7 @@
             } else {
                 nameInput.value = "";
                 sumInput.value = "";
-                // Yangi kiritilgan xarajat darhol shu joyning o'zida ro'yxatga qo'shiladi va umumiy summa yangilanadi:
+                alert("Xarajat saqlandi!");
                 loadExp();
             }
         });
