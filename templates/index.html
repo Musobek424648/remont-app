@@ -40,7 +40,6 @@
         }
         .btn-main:hover { background-color: #218838; }
         
-        /* Obyektlar ro'yxati stili */
         .object-item {
             display: flex;
             align-items: center;
@@ -84,7 +83,20 @@
         }
         .btn-add-exp:hover { background-color: #0069d9; }
 
-        /* Modal (Pop-up) oyna stili */
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        .btn-delete:hover { background-color: #c82333; }
+
+        /* Modal oyna */
         .modal {
             display: none; 
             position: fixed; 
@@ -142,7 +154,7 @@
     <div class="container">
         <h1>Ta'mirlash Xarajatlari</h1>
 
-        <!-- 1. Yangi obyekt qo'shish bo'limi -->
+        <!-- Yangi obyekt qo'shish -->
         <h2>Yangi Obyekt Qo'shish</h2>
         <div class="form-group">
             <input type="text" id="newObjectInput" placeholder="Obyekt nomi (masalan: Oshxona)">
@@ -151,15 +163,30 @@
 
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
 
-        <!-- 2. Obyektlar ro'yxati -->
+        <!-- Obyektlar ro'yxati -->
         <h2>Obyektlar Ro'yxati</h2>
         <div id="objectsList"></div>
     </div>
 
-    <!-- Xarajatlar Modali (Alohida oyna bo'lib ochiladi) -->
+    <!-- 1. Tahrirlash va O'chirish Modali -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeEditModal()">&times;</span>
+            <h2>Obyektni Tahrirlash</h2>
+            
+            <div class="form-group">
+                <label style="font-weight: bold;">Yangi nom kiriting:</label>
+                <input type="text" id="editObjectNameInput">
+                <button class="btn-main" onclick="saveEditedObject()">💾 Saqlash</button>
+                <button class="btn-delete" onclick="deleteObject()">🗑️ Obyektni o'chirish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Xarajatlar Modali -->
     <div id="expenseModal" class="modal">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <span class="close-btn" onclick="closeExpenseModal()">&times;</span>
             <h2 id="modalObjectName" style="color: #007bff;">Obyekt Xarajatlari</h2>
             
             <h3>Yangi Xarajat Qo'shish</h3>
@@ -187,14 +214,14 @@
     </div>
 
     <script>
+        let currentEditingObject = '';
         let currentSelectedObject = '';
 
-        // Sahifa yuklanganda obyektlarni yuklash
         document.addEventListener('DOMContentLoaded', () => {
             loadObjects();
         });
 
-        // Obyektlar ro'yxatini yuklash
+        // Obyektlarni yuklash
         async function loadObjects() {
             try {
                 const res = await fetch('/api/objects');
@@ -214,7 +241,7 @@
                     item.innerHTML = `
                         <span class="object-title">${obj.nomi}</span>
                         <div class="object-actions">
-                            <button class="btn-edit" onclick="editObject('${obj.nomi}')">✏️ Tahrirlash</button>
+                            <button class="btn-edit" onclick="openEditModal('${obj.nomi}')">✏️ Tahrirlash</button>
                             <button class="btn-add-exp" onclick="openExpenseModal('${obj.nomi}')">➕ Xarajatlar</button>
                         </div>
                     `;
@@ -241,23 +268,35 @@
             loadObjects();
         }
 
-        // Obyekt nomini tahrirlash
-        async function editObject(oldName) {
-            const newName = prompt("Yangi obyekt nomini kiriting:", oldName);
-            if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
+        // Tahrirlash modalini ochish
+        function openEditModal(objectName) {
+            currentEditingObject = objectName;
+            document.getElementById('editObjectNameInput').value = objectName;
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // Yangi nomni saqlash
+        async function saveEditedObject() {
+            const newName = document.getElementById('editObjectNameInput').value.trim();
+            if (!newName) return alert("Obyekt nomini kiriting!");
+            if (newName === currentEditingObject) return closeEditModal();
 
             try {
                 const response = await fetch('/api/objects', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        old_nomi: oldName,
-                        new_nomi: newName.trim()
+                        old_nomi: currentEditingObject,
+                        new_nomi: newName
                     })
                 });
 
                 if (response.ok) {
-                    alert("Obyekt nomi o'zgartirildi!");
+                    closeEditModal();
                     loadObjects();
                 } else {
                     alert("Xatolik yuz berdi!");
@@ -267,7 +306,31 @@
             }
         }
 
-        // Modal oynani ochish va xarajatlarni yuklash
+        // Obyektni o'chirish
+        async function deleteObject() {
+            if (!confirm(`Haqiqatan ham "${currentEditingObject}" obyektini va unga tegishli barcha xarajatlarni o'chirmoqchimisiz?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/objects', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nomi: currentEditingObject })
+                });
+
+                if (response.ok) {
+                    closeEditModal();
+                    loadObjects();
+                } else {
+                    alert("O'chirishda xatolik yuz berdi!");
+                }
+            } catch (error) {
+                console.error("Xatolik:", error);
+            }
+        }
+
+        // Xarajatlar modalini ochish
         function openExpenseModal(objectName) {
             currentSelectedObject = objectName;
             document.getElementById('modalObjectName').textContent = objectName;
@@ -275,8 +338,7 @@
             loadExpenses();
         }
 
-        // Modal oynani yopish
-        function closeModal() {
+        function closeExpenseModal() {
             document.getElementById('expenseModal').style.display = 'none';
             document.getElementById('expenseName').value = '';
             document.getElementById('expenseAmount').value = '';
