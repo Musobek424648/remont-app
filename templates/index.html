@@ -9,11 +9,11 @@
         .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         h2, h3 { color: #333; }
         input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
         button:hover { background-color: #218838; }
         .btn-blue { background-color: #007bff; }
         .btn-blue:hover { background-color: #0069d9; }
-        .item { padding: 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; }
+        .item { padding: 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
         .box { border: 1px solid #ccc; padding: 15px; margin-top: 15px; border-radius: 5px; }
     </style>
 </head>
@@ -75,21 +75,30 @@
                         <button style="width:auto; padding:5px 10px;" onclick="selectObj('${item.nomi}')">Xarajatlarni ko'rish</button>
                     </div>`;
                 });
-            });
+            })
+            .catch(err => console.error(err));
     }
 
     function addObj() {
-        let name = document.getElementById('objInput').value;
+        let nameInput = document.getElementById('objInput');
+        let name = nameInput.value.trim();
         if(!name) return alert("Nom kiriting!");
         
         fetch('/api/objects', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({nomi: name})
-        }).then(() => {
-            document.getElementById('objInput').value = "";
-            loadObjs();
-        });
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.error) {
+                alert(data.error);
+            } else {
+                nameInput.value = "";
+                loadObjs();
+            }
+        })
+        .catch(err => alert("Xatolik yuz berdi: " + err));
     }
 
     function selectObj(name) {
@@ -112,23 +121,34 @@
                 data.forEach(item => {
                     div.innerHTML += `<div class="item"><span>${item.nomi}</span> <b>${item.summa} so'm</b></div>`;
                 });
-            });
+            })
+            .catch(err => console.error(err));
     }
 
     function addExp() {
-        let name = document.getElementById('expName').value;
-        let sum = document.getElementById('expSum').value;
+        let nameInput = document.getElementById('expName');
+        let sumInput = document.getElementById('expSum');
+        let name = nameInput.value.trim();
+        let sum = sumInput.value.trim();
+
         if(!name || !sum) return alert("To'liq to'ldiring!");
 
         fetch('/api/expenses', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({obekt: currentObj, nomi: name, summa: sum})
-        }).then(() => {
-            document.getElementById('expName').value = "";
-            document.getElementById('expSum).value = "";
-            loadExp();
-        });
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.error) {
+                alert(data.error);
+            } else {
+                nameInput.value = "";
+                sumInput.value = "";
+                loadExp();
+            }
+        })
+        .catch(err => alert("Xatolik yuz berdi: " + err));
     }
 </script>
 
