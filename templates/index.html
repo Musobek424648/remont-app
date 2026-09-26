@@ -5,70 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Remont Xarajatlari</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f0f2f5; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        h2 { text-align: center; color: #1a73e8; margin-top: 0; }
-        h3, h4 { color: #333; margin-top: 0; }
-        input { padding: 12px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
-        button { padding: 12px; margin: 8px 0; width: 100%; background-color: #28a745; color: white; border: none; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.2s; }
-        button:hover { background-color: #218838; }
-        .btn-blue { background-color: #1a73e8; }
-        .btn-blue:hover { background-color: #1557b0; }
-        .box { border: 1px solid #e0e0e0; padding: 18px; margin-top: 18px; border-radius: 8px; background: #fafafa; }
-        .item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 6px; border-radius: 4px; }
-        .item:last-child { border-bottom: none; }
-        .total-box { margin-top: 15px; padding: 15px; background: #e8f0fe; border-radius: 6px; text-align: right; font-weight: bold; font-size: 18px; color: #1967d2; }
-        .obj-btn { width: auto; padding: 6px 14px; margin: 0; }
+        body { font-family: sans-serif; margin: 20px; background: #f4f4f9; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        input, button { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
+        button { background: #28a745; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #218838; }
+        .btn-blue { background: #007bff; }
+        .btn-blue:hover { background: #0069d9; }
+        .box { border: 1px solid #ccc; padding: 15px; margin-top: 15px; border-radius: 5px; }
+        .item { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .total { font-weight: bold; text-align: right; margin-top: 10px; font-size: 18px; color: #007bff; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🏗️ Remont Xarajatlari</h2>
+    <h2>Remont Xarajatlari</h2>
 
     <!-- Ob'ekt qo'shish -->
     <div class="box">
-        <h3>Yangi Ob'ekt Qo'shish</h3>
-        <input type="text" id="objInput" placeholder="Ob'ekt nomi (masalan: Yunusobod)">
-        <button class="btn-blue" onclick="addObj()">Ob'ektni Saqlash</button>
+        <h3>Ob'ekt qo'shish</h3>
+        <input type="text" id="objInput" placeholder="Ob'ekt nomi">
+        <button class="btn-blue" onclick="addObj()">Saqlash</button>
     </div>
 
     <!-- Ob'ektlar ro'yxati -->
     <div class="box">
-        <h3>Ob'ektlar Ro'yxati</h3>
-        <div id="objList">Yuklanmoqda...</div>
+        <h3>Ob'ektlar</h3>
+        <div id="objList"></div>
     </div>
 
-    <!-- Xarajatlar bloki -->
-    <div id="expenseBox" class="box" style="display:none; background: #fff; border: 2px solid #1a73e8;">
-        <h3 id="selectedObjTitle" style="color: #1a73e8;"></h3>
+    <!-- Xarajatlar oynasi -->
+    <div id="expenseBox" class="box" style="display:none;">
+        <h3 id="selectedObjTitle"></h3>
         
-        <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #eee;">
-            <h4>Yangi xarajat kiritish:</h4>
-            <input type="text" id="expName" placeholder="Xarajat nomi (masalan: Sement)">
-            <input type="number" id="expSum" placeholder="Summa (so'm)">
-            <button onclick="addExp()">+ Xarajatni Saqlash</button>
-        </div>
+        <input type="text" id="expName" placeholder="Xarajat nomi">
+        <input type="number" id="expSum" placeholder="Summasi">
+        <button onclick="addExp()">Xarajat Qo'shish</button>
 
-        <h4>Kiritilgan xarajatlar ro'yxati:</h4>
+        <hr>
+        <h4>Xarajatlar ro'yxati:</h4>
         <div id="expList"></div>
-        <div id="totalSum" class="total-box">Jami: 0 so'm</div>
-    </div>
-
-    <!-- Excel yuklash -->
-    <div class="box" style="text-align: center;">
-        <a href="/download/excel" style="text-decoration: none;">
-            <button class="btn-blue">📥 Excel Hisobotni Yuklab Olish</button>
-        </a>
+        <div id="totalSum" class="total">Jami: 0 so'm</div>
     </div>
 </div>
 
 <script>
     let currentObj = "";
 
-    document.addEventListener("DOMContentLoaded", function() {
+    window.onload = function() {
         loadObjs();
-    });
+    };
 
     function loadObjs() {
         fetch('/api/objects')
@@ -76,27 +63,21 @@
             .then(data => {
                 let div = document.getElementById('objList');
                 div.innerHTML = "";
-                if(!data || data.length === 0) {
-                    div.innerHTML = "<p style='color: #888;'>Hali ob'ektlar qo'shilmadi.</p>";
-                    return;
-                }
                 data.forEach(item => {
-                    let name = item.nomi;
-                    let d = document.createElement('div');
-                    d.className = 'item';
-                    d.innerHTML = `<span><b>${name}</b></span>
-                                   <button class="btn-blue obj-btn" onclick="selectObj('${name.replace(/'/g, "\\'")}')">Xarajatlar</button>`;
-                    div.appendChild(d);
+                    div.innerHTML += `
+                        <div class="item">
+                            <span><b>${item.nomi}</b></span>
+                            <button class="btn-blue" style="width: auto; padding: 5px 10px;" onclick="selectObj('${item.nomi}')">Xarajatlar</button>
+                        </div>
+                    `;
                 });
-            })
-            .catch(err => console.error("Xatolik ob'ektlarni yuklashda:", err));
+            });
     }
 
     function addObj() {
-        let nameInput = document.getElementById('objInput');
-        let name = nameInput.value.trim();
-        if(!name) return alert("Ob'ekt nomini kiriting!");
-        
+        let name = document.getElementById('objInput').value.trim();
+        if (!name) return alert("Nom kiriting!");
+
         fetch('/api/objects', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -104,20 +85,19 @@
         })
         .then(res => res.json())
         .then(() => {
-            nameInput.value = "";
+            document.getElementById('objInput').value = "";
             loadObjs();
         });
     }
 
     function selectObj(name) {
         currentObj = name;
-        document.getElementById('selectedObjTitle').innerText = "📍 Ob'ekt: " + name;
+        document.getElementById('selectedObjTitle').innerText = "Ob'ekt: " + name;
         document.getElementById('expenseBox').style.display = "block";
         loadExp();
     }
 
     function loadExp() {
-        if (!currentObj) return;
         fetch('/api/expenses_by_param?obekt=' + encodeURIComponent(currentObj))
             .then(res => res.json())
             .then(data => {
@@ -126,33 +106,26 @@
                 div.innerHTML = "";
                 let total = 0;
 
-                if(!data || data.length === 0) {
-                    div.innerHTML = "<p style='color: #888; text-align: center;'>Ushbu ob'ektga hali xarajat kiritilmagan.</p>";
-                    totalDiv.innerText = "Jami: 0 so'm";
-                    return;
-                }
-
                 data.forEach(item => {
-                    let sumVal = parseInt(item.summa) || 0;
-                    total += sumVal;
-                    div.innerHTML += `<div class="item">
-                        <span>${item.nomi}</span> 
-                        <b style="color: #28a745;">${sumVal.toLocaleString('uz-UZ')} so'm</b>
-                    </div>`;
+                    let s = parseInt(item.summa) || 0;
+                    total += s;
+                    div.innerHTML += `
+                        <div class="item">
+                            <span>${item.nomi}</span>
+                            <b>${s} so'm</b>
+                        </div>
+                    `;
                 });
 
-                totalDiv.innerText = "Jami: " + total.toLocaleString('uz-UZ') + " so me";
-            })
-            .catch(err => console.error("Xatolik xarajatlarni yuklashda:", err));
+                totalDiv.innerText = "Jami: " + total + " so'm";
+            });
     }
 
     function addExp() {
-        let nameInput = document.getElementById('expName');
-        let sumInput = document.getElementById('expSum');
-        let name = nameInput.value.trim();
-        let sum = sumInput.value.trim();
+        let name = document.getElementById('expName').value.trim();
+        let sum = document.getElementById('expSum').value.trim();
 
-        if(!name || !sum) return alert("Xarajat nomi va summasini kiriting!");
+        if (!name || !sum) return alert("Ma'lumotlarni to'liq kiriting!");
 
         fetch('/api/expenses', {
             method: 'POST',
@@ -161,8 +134,8 @@
         })
         .then(res => res.json())
         .then(() => {
-            nameInput.value = "";
-            sumInput.value = "";
+            document.getElementById('expName').value = "";
+            document.getElementById('expSum').value = "";
             loadExp();
         });
     }
