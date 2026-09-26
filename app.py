@@ -13,7 +13,7 @@ supabase: Client = create_client(url, key)
 def index():
     return render_template('index.html')
 
-@app.route('/api/objects', methods=['GET', 'POST', 'PUT'])
+@app.route('/api/objects', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def handle_objects():
     if request.method == 'POST':
         data = request.get_json() or {}
@@ -26,20 +26,32 @@ def handle_objects():
         return jsonify({'status': 'ok'})
 
     elif request.method == 'PUT':
-        # Obyekt nomini tahrirlash (o'zgartirish)
+        # Obyekt nomini yangilash
         data = request.get_json() or {}
         old_nomi = str(data.get('old_nomi', '')).strip()
         new_nomi = str(data.get('new_nomi', '')).strip()
 
         if old_nomi and new_nomi:
             try:
-                # 1. objects jadvalidagi nomni o'zgartiramiz
                 supabase.table('objects').update({'nomi': new_nomi}).eq('nomi', old_nomi).execute()
-                # 2. Ushbu obyektga bog'liq bo'lgan xarajatlar (expenses) jadvalidagi nomni ham yangilaymiz
                 supabase.table('expenses').update({'obekt': new_nomi}).eq('obekt', old_nomi).execute()
                 return jsonify({'status': 'ok'})
             except Exception as e:
                 print("Error updating object:", e)
+                return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'invalid data'}), 400
+
+    elif request.method == 'DELETE':
+        # Obyektni va unga tegishli xarajatlarni o'chirish
+        data = request.get_json() or {}
+        nomi = str(data.get('nomi', '')).strip()
+        if nomi:
+            try:
+                supabase.table('expenses').delete().eq('obekt', nomi).execute()
+                supabase.table('objects').delete().eq('nomi', nomi).execute()
+                return jsonify({'status': 'ok'})
+            except Exception as e:
+                print("Error deleting object:", e)
                 return jsonify({'status': 'error', 'message': str(e)}), 500
         return jsonify({'status': 'invalid data'}), 400
 
