@@ -3,336 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ta'mirlash Xarajatlari</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Remont Xarajatlari</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --success: #10b981;
-            --success-hover: #059669;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --dark: #0f172a;
-            --gray-light: #f8fafc;
-            --border: #e2e8f0;
-            --radius: 12px;
-        }
-
-        * { box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-
-        body {
-            margin: 0; padding: 40px 15px;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
-            min-height: 100vh; color: #334155;
-        }
-
-        .container {
-            max-width: 680px; margin: 0 auto;
-            background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px);
-            padding: 32px; border-radius: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-        }
-
-        h1 { font-size: 26px; font-weight: 700; color: var(--dark); margin: 0 0 24px 0; display: flex; align-items: center; gap: 10px; }
-        h2 { font-size: 18px; font-weight: 600; color: #475569; margin: 0 0 12px 0; }
-        h3 { font-size: 16px; font-weight: 600; color: var(--dark); margin: 0 0 12px 0; }
-
-        .form-card {
-            background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius);
-            padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .input-group { display: flex; flex-direction: column; gap: 12px; }
-
-        input {
-            width: 100%; padding: 12px 16px; border: 1.5px solid var(--border);
-            border-radius: 8px; font-size: 15px; outline: none; background: #f8fafc;
-            transition: all 0.2s ease;
-        }
-        input:focus { background: #ffffff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
-
-        button {
-            border: none; border-radius: 8px; padding: 12px 20px; font-size: 14px;
-            font-weight: 600; cursor: pointer; transition: all 0.2s ease;
-            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-        }
-        button:active { transform: scale(0.98); }
-
-        .btn-main { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3); }
-        .btn-main:hover { background: var(--primary-hover); }
-        .btn-success { background: var(--success); color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3); }
-        .btn-success:hover { background: var(--success-hover); }
-        .btn-delete { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; margin-top: 10px; width: 100%; }
-        .btn-delete:hover { background: var(--danger); color: white; }
-
-        .object-item {
-            display: flex; align-items: center; justify-content: space-between;
-            background: #ffffff; padding: 14px 18px; border-radius: var(--radius);
-            margin-bottom: 12px; border: 1px solid var(--border);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-            transition: all 0.2s ease;
-        }
-        .object-item:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
-        .object-title { font-size: 16px; font-weight: 600; color: var(--dark); }
-        .object-actions { display: flex; gap: 8px; }
-        .btn-edit { background: #fef3c7; color: #92400e; padding: 8px 14px; }
-        .btn-edit:hover { background: #fde68a; }
-        .btn-add-exp { background: #e0e7ff; color: #3730a3; padding: 8px 14px; }
-        .btn-add-exp:hover { background: #c7d2fe; }
-
-        /* Modal */
-        .modal {
-            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
-            justify-content: center; align-items: center; padding: 15px;
-        }
-        .modal-content {
-            background-color: #ffffff; padding: 28px; border-radius: 20px; width: 100%; max-width: 520px;
-            position: relative; max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        .close-btn {
-            position: absolute; right: 20px; top: 20px; font-size: 20px; cursor: pointer; color: #94a3b8;
-            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%;
-        }
-        .close-btn:hover { background: #f1f5f9; color: var(--dark); }
-
-        /* Table */
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; }
-        th { background-color: #f8fafc; color: #64748b; font-weight: 600; font-size: 13px; text-transform: uppercase; padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
-        td { padding: 12px; font-size: 14px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-        .total-box { margin-top: 20px; padding: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius); font-size: 16px; font-weight: 700; color: #166534; text-align: right; }
-        .action-btns { display: flex; gap: 6px; }
-        .btn-sm-edit { background: #fef3c7; color: #b45309; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; border: none; }
-        .btn-sm-del { background: #fef2f2; color: #dc2626; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; border: none; }
+        body { background-color: #f8f9fa; font-family: sans-serif; }
+        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .nav-pills .nav-link.active { background-color: #0d6efd; }
     </style>
 </head>
 <body>
+    <div class="container py-4">
+        <h2 class="text-center mb-4">🏗️ Remont Xarajatlari</h2>
 
-    <div class="container">
-        <h1>🏢 Ta'mirlash Xarajatlari</h1>
+        <!-- Menyular -->
+        <ul class="nav nav-pills nav-justified mb-4" id="pills-tab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="pills-objects-tab" data-bs-toggle="pill" data-bs-target="#pills-objects" type="button">Mening Ob'ektlarim</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="pills-report-tab" data-bs-toggle="pill" data-bs-target="#pills-report" type="button" onclick="loadReport()">Hisobot</button>
+            </li>
+        </ul>
 
-        <div class="form-card">
-            <h2>Yangi Obyekt Qo'shish</h2>
-            <div class="input-group">
-                <input type="text" id="newObjectInput" placeholder="Obyekt nomi (masalan: Urganch mehmoxonasi)">
-                <button class="btn-main" onclick="addObject()">➕ Qo'shish</button>
-            </div>
-        </div>
+        <div class="tab-content" id="pills-tabContent">
+            <!-- Ob'ektlar bo'limi -->
+            <div class="tab-pane fade show active" id="pills-objects">
+                <div class="card p-3">
+                    <h5>Yangi ob'ekt qo'shish</h5>
+                    <div class="input-group mb-3">
+                        <input type="text" id="new-object-name" class="form-control" placeholder="Masalan: Yunusobod 4-uy">
+                        <button class="btn btn-primary" onclick="addObject()">Qo'shish</button>
+                    </div>
+                </div>
 
-        <h2>Obyektlar Ro'yxati</h2>
-        <div id="objectsList"></div>
-    </div>
+                <div class="card p-3">
+                    <h5>Ob'ektlar ro'yxati</h5>
+                    <div id="objects-list" class="list-group">
+                        <div class="text-muted">Yuklanmoqda...</div>
+                    </div>
+                </div>
 
-    <!-- Obyekt Tahrirlash Modali -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeEditModal()">&times;</span>
-            <h2>Obyektni Tahrirlash</h2>
-            <div class="input-group" style="margin-top: 15px;">
-                <label style="font-weight: 500; font-size: 14px; color: #64748b;">Yangi nom kiriting:</label>
-                <input type="text" id="editObjectNameInput">
-                <button class="btn-success" onclick="saveEditedObject()">💾 Saqlash</button>
-                <button class="btn-delete" onclick="deleteObject()">🗑️ Obyektni o'chirish</button>
-            </div>
-        </div>
-    </div>
+                <!-- Tanlangan ob'ekt xarajatlari -->
+                <div id="selected-object-details" style="display: none;">
+                    <hr>
+                    <h4 id="current-object-title" class="text-primary"></h4>
+                    
+                    <div class="card p-3 bg-light">
+                        <h6>Ushbu ob'ektga xarajat qo'shish</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <input type="text" id="exp-name" class="form-control" placeholder="Xarajat nomi (masalan: Sement)">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="number" id="exp-amount" class="form-control" placeholder="Summa (so'm)">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-success w-100" onclick="addExpense()">Saqlash</button>
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- Xarajatlar Modali -->
-    <div id="expenseModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeExpenseModal()">&times;</span>
-            <h2 id="modalObjectName" style="color: var(--primary); font-size: 22px;">Obyekt Xarajatlari</h2>
-            
-            <div class="form-card" style="margin-top: 15px; margin-bottom: 20px;">
-                <h3 id="expenseFormTitle">Yangi Xarajat Qo'shish</h3>
-                <div class="input-group">
-                    <input type="text" id="expenseName" placeholder="Xarajat nomi (masalan: Eshik)">
-                    <input type="number" id="expenseAmount" placeholder="Summa (so'm)">
-                    <button class="btn-success" id="saveExpenseBtn" onclick="addOrUpdateExpense()">💾 Saqlash</button>
-                    <button id="cancelEditExpBtn" style="display:none; background: #e2e8f0; color: #475569;" onclick="resetExpenseForm()">Bekor qilish</button>
+                    <div class="card p-3">
+                        <h6>Xarajatlar tarixi</h6>
+                        <ul id="object-expenses-list" class="list-group list-group-flush"></ul>
+                    </div>
                 </div>
             </div>
 
-            <h3>Mavjud Xarajatlar</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Xarajat Nomi</th>
-                        <th>Summa</th>
-                        <th style="width: 80px;">Amallar</th>
-                    </tr>
-                </thead>
-                <tbody id="expensesTableBody"></tbody>
-            </table>
-
-            <div class="total-box" id="totalAmount">Jami: 0 so'm</div>
+            <!-- Hisobot bo'limi -->
+            <div class="tab-pane fade" id="pills-report">
+                <div class="card p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Umumiy hisobot</h5>
+                        <a href="/download/excel" class="btn btn-outline-success">📥 Excel yuklab olish</a>
+                    </div>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Ob'ekt</th>
+                                <th>Jami Xarajat (so'm)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentEditingObject = '';
-        let currentSelectedObject = '';
-        let currentEditingExpenseId = null;
+        let currentObject = "";
 
-        document.addEventListener('DOMContentLoaded', () => { loadObjects(); });
+        document.addEventListener("DOMContentLoaded", loadObjects);
 
-        async function loadObjects() {
-            try {
-                const res = await fetch('/api/objects');
-                const objects = await res.json();
-                const list = document.getElementById('objectsList');
-                list.innerHTML = '';
-                if (objects.length === 0) {
-                    list.innerHTML = '<p style="color:#94a3b8; text-align:center; padding: 20px;">Hali obyektlar qo\'shilmagan.</p>';
-                    return;
+        function loadObjects() {
+            fetch("/api/objects")
+                .then(res => res.json())
+                .then(data => {
+                    const list = document.getElementById("objects-list");
+                    list.innerHTML = "";
+                    if (!data || data.length === 0) {
+                        list.innerHTML = '<div class="text-muted">Hali ob`ektlar yo`q.</div>';
+                        return;
+                    }
+                    data.forEach(obj => {
+                        const btn = document.createElement("button");
+                        btn.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center";
+                        btn.innerText = obj.nomi;
+                        btn.onclick = () => selectObject(obj.nomi);
+                        list.appendChild(btn);
+                    });
+                })
+                .catch(err => console.error(err));
+        }
+
+        function addObject() {
+            const nameInput = document.getElementById("new-object-name");
+            const nomi = nameInput.value.trim();
+            if (!nomi) return alert("Ob'ekt nomini kiriting!");
+
+            fetch("/api/objects", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nomi })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) alert(data.error);
+                else {
+                    nameInput.value = "";
+                    loadObjects();
                 }
-                objects.forEach(obj => {
-                    const item = document.createElement('div');
-                    item.className = 'object-item';
-                    item.innerHTML = `
-                        <span class="object-title">${obj.nomi}</span>
-                        <div class="object-actions">
-                            <button class="btn-edit" onclick="openEditModal('${obj.nomi}')">✏️ Tahrirlash</button>
-                            <button class="btn-add-exp" onclick="openExpenseModal('${obj.nomi}')">➕ Xarajatlar</button>
-                        </div>
-                    `;
-                    list.appendChild(item);
-                });
-            } catch (err) { console.error(err); }
-        }
-
-        async function addObject() {
-            const input = document.getElementById('newObjectInput');
-            const nomi = input.value.trim();
-            if (!nomi) return alert("Obyekt nomini kiriting!");
-            await fetch('/api/objects', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nomi: nomi })
             });
-            input.value = '';
-            loadObjects();
         }
 
-        function openEditModal(objectName) {
-            currentEditingObject = objectName;
-            document.getElementById('editObjectNameInput').value = objectName;
-            document.getElementById('editModal').style.display = 'flex';
-        }
-        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
-
-        async function saveEditedObject() {
-            const newName = document.getElementById('editObjectNameInput').value.trim();
-            if (!newName) return alert("Obyekt nomini kiriting!");
-            if (newName === currentEditingObject) return closeEditModal();
-            const response = await fetch('/api/objects', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ old_nomi: currentEditingObject, new_nomi: newName })
-            });
-            if (response.ok) { closeEditModal(); loadObjects(); }
+        function selectObject(nomi) {
+            currentObject = nomi;
+            document.getElementById("current-object-title").innerText = "Ob'ekt: " + nomi;
+            document.getElementById("selected-object-details").style.display = "block";
+            loadObjectExpenses(nomi);
         }
 
-        async function deleteObject() {
-            if (!confirm(`"${currentEditingObject}" obyektini o'chirmoqchimisiz?`)) return;
-            const response = await fetch('/api/objects', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nomi: currentEditingObject })
-            });
-            if (response.ok) { closeEditModal(); loadObjects(); }
-        }
+        function loadObjectExpenses(nomi) {
+            fetch("/api/expenses/" + encodeURIComponent(nomi))
+                .then(res => res.json())
+                .then(data => {
+                    const list = document.getElementById("object-expenses-list");
+                    list.innerHTML = "";
+                    if (!data || data.length === 0) {
+                        list.innerHTML = '<li class="list-group-item text-muted">Hali xarajat yo`q</li>';
+                        return;
+                    }
+                    data.forEach(exp => {
+                        // Sanani chiroyli formatda chiqarish
+                        let dateStr = "";
+                        if (exp.created_at) {
+                            const d = new Date(exp.created_at);
+                            dateStr = `<br><small class="text-muted">📅 ${d.toLocaleDateString('uz-UZ')} ${d.toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})}</small>`;
+                        }
 
-        function openExpenseModal(objectName) {
-            currentSelectedObject = objectName;
-            document.getElementById('modalObjectName').textContent = objectName;
-            document.getElementById('expenseModal').style.display = 'flex';
-            resetExpenseForm();
-            loadExpenses();
-        }
-        function closeExpenseModal() { document.getElementById('expenseModal').style.display = 'none'; }
-
-        function resetExpenseForm() {
-            currentEditingExpenseId = null;
-            document.getElementById('expenseName').value = '';
-            document.getElementById('expenseAmount').value = '';
-            document.getElementById('expenseFormTitle').textContent = "Yangi Xarajat Qo'shish";
-            document.getElementById('saveExpenseBtn').textContent = "💾 Saqlash";
-            document.getElementById('cancelEditExpBtn').style.display = 'none';
-        }
-
-        function editExpenseInline(id, name, amount) {
-            currentEditingExpenseId = id;
-            document.getElementById('expenseName').value = name;
-            document.getElementById('expenseAmount').value = amount;
-            document.getElementById('expenseFormTitle').textContent = "Xarajatni O'zgartirish";
-            document.getElementById('saveExpenseBtn').textContent = "🔄 Yangilash";
-            document.getElementById('cancelEditExpBtn').style.display = 'inline-block';
-        }
-
-        async function addOrUpdateExpense() {
-            const nomi = document.getElementById('expenseName').value.trim();
-            const summa = document.getElementById('expenseAmount').value.trim();
-            if (!nomi || !summa) return alert("Xarajat nomi va summasini kiriting!");
-
-            if (currentEditingExpenseId) {
-                await fetch('/api/expenses', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: currentEditingExpenseId, nomi: nomi, summa: summa })
+                        const li = document.createElement("li");
+                        li.className = "list-group-item d-flex justify-content-between align-items-center";
+                        li.innerHTML = `<span><b>${exp.nomi}</b>${dateStr}</span><strong>${Number(exp.summa).toLocaleString()} so'm</strong>`;
+                        list.appendChild(li);
+                    });
                 });
-            } else {
-                await fetch('/api/expenses', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ obekt: currentSelectedObject, nomi: nomi, summa: summa })
-                });
-            }
-            resetExpenseForm();
-            loadExpenses();
         }
 
-        async function deleteExpense(id) {
-            if (!confirm("Ushbu xarajatni o'chirmoqchimisiz?")) return;
-            await fetch('/api/expenses', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: id })
+        function addExpense() {
+            const nomi = document.getElementById("exp-name").value.trim();
+            const summa = document.getElementById("exp-amount").value.trim();
+
+            if (!nomi || !summa) return alert("Barcha maydonlarni to'ldiring!");
+
+            fetch("/api/expenses", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ obekt: currentObject, nomi, summa })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) alert(data.error);
+                else {
+                    document.getElementById("exp-name").value = "";
+                    document.getElementById("exp-amount").value = "";
+                    loadObjectExpenses(currentObject);
+                }
             });
-            loadExpenses();
         }
 
-        async function loadExpenses() {
-            const tbody = document.getElementById('expensesTableBody');
-            const totalDiv = document.getElementById('totalAmount');
-            tbody.innerHTML = '';
-            totalDiv.textContent = 'Jami: 0 so\'m';
-
-            try {
-                const res = await fetch(`/api/expenses_by_param?obekt=${encodeURIComponent(currentSelectedObject)}`);
-                const expenses = await res.json();
-                let total = 0;
-                expenses.forEach(exp => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="font-weight: 500;">${exp.nomi}</td>
-                        <td style="font-weight: 600; color: #0f172a;">${Number(exp.summa).toLocaleString('uz-UZ')} so'm</td>
-                        <td>
-                            <div class="action-btns">
-                                <button class="btn-sm-edit" onclick="editExpenseInline(${exp.id}, '${exp.nomi}', ${exp.summa})">✏️</button>
-                                <button class="btn-sm-del" onclick="deleteExpense(${exp.id})">🗑️</button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                    total += Number(exp.summa);
+        function loadReport() {
+            fetch("/api/report")
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById("report-table-body");
+                    tbody.innerHTML = "";
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">Ma`lumot yo`q</td></tr>';
+                        return;
+                    }
+                    data.forEach(row => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `<td>${row.obekt}</td><td><strong>${Number(row.summa).toLocaleString()} so'm</strong></td>`;
+                        tbody.appendChild(tr);
+                    });
                 });
-                totalDiv.textContent = `Jami: ${total.toLocaleString('uz-UZ')} so'm`;
-            } catch (err) { console.error(err); }
         }
     </script>
 </body>
