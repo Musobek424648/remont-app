@@ -65,7 +65,20 @@
 
                     <div class="card p-3">
                         <h6>Xarajatlar tarixi</h6>
-                        <ul id="object-expenses-list" class="list-group list-group-flush"></ul>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Sana va Vaqt</th>
+                                        <th>Xarajat Nomi</th>
+                                        <th class="text-end">Summa (so'm)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="object-expenses-table-body">
+                                    <!-- Xarajatlar jadval ko'rinishida shu yerga tushadi -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -149,24 +162,26 @@
             fetch("/api/expenses/" + encodeURIComponent(nomi))
                 .then(res => res.json())
                 .then(data => {
-                    const list = document.getElementById("object-expenses-list");
-                    list.innerHTML = "";
+                    const tbody = document.getElementById("object-expenses-table-body");
+                    tbody.innerHTML = "";
                     if (!data || data.length === 0) {
-                        list.innerHTML = '<li class="list-group-item text-muted">Hali xarajat yo`q</li>';
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Hali xarajat yo`q</td></tr>';
                         return;
                     }
                     data.forEach(exp => {
-                        // Sanani chiroyli formatda chiqarish
-                        let dateStr = "";
+                        let dateStr = "-";
                         if (exp.created_at) {
                             const d = new Date(exp.created_at);
-                            dateStr = `<br><small class="text-muted">📅 ${d.toLocaleDateString('uz-UZ')} ${d.toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})}</small>`;
+                            dateStr = d.toLocaleDateString('uz-UZ') + " " + d.toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'});
                         }
 
-                        const li = document.createElement("li");
-                        li.className = "list-group-item d-flex justify-content-between align-items-center";
-                        li.innerHTML = `<span><b>${exp.nomi}</b>${dateStr}</span><strong>${Number(exp.summa).toLocaleString()} so'm</strong>`;
-                        list.appendChild(li);
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td class="text-muted small">${dateStr}</td>
+                            <td><strong>${exp.nomi}</strong></td>
+                            <td class="text-end text-success fw-bold">${Number(exp.summa).toLocaleString()} so'm</td>
+                        `;
+                        tbody.appendChild(tr);
                     });
                 });
         }
