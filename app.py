@@ -4,7 +4,6 @@ from supabase import create_client, Client
 
 app = Flask(__name__)
 
-# Render Environment Variables orqali ma'lumotlarni olish
 url: str = os.environ.get("SUPABASE_URL", "https://kkgfktwrikjlcejmddqa.supabase.co")
 key: str = os.environ.get("SUPABASE_KEY", "sb_publishable_nIuLaUVAV42ihPsAyOLFCw_XV7nns5j")
 
@@ -14,7 +13,7 @@ supabase: Client = create_client(url, key)
 def index():
     return render_template('index.html')
 
-@app.route('/api/objects', methods=['GET', 'POST'])
+@app.route('/api/objects', methods=['GET', 'POST', 'PUT'])
 def handle_objects():
     if request.method == 'POST':
         data = request.get_json() or {}
@@ -25,6 +24,25 @@ def handle_objects():
             except Exception as e:
                 print("Error inserting object:", e)
         return jsonify({'status': 'ok'})
+
+    elif request.method == 'PUT':
+        # Obyekt nomini tahrirlash (o'zgartirish)
+        data = request.get_json() or {}
+        old_nomi = str(data.get('old_nomi', '')).strip()
+        new_nomi = str(data.get('new_nomi', '')).strip()
+
+        if old_nomi and new_nomi:
+            try:
+                # 1. objects jadvalidagi nomni o'zgartiramiz
+                supabase.table('objects').update({'nomi': new_nomi}).eq('nomi', old_nomi).execute()
+                # 2. Ushbu obyektga bog'liq bo'lgan xarajatlar (expenses) jadvalidagi nomni ham yangilaymiz
+                supabase.table('expenses').update({'obekt': new_nomi}).eq('obekt', old_nomi).execute()
+                return jsonify({'status': 'ok'})
+            except Exception as e:
+                print("Error updating object:", e)
+                return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'invalid data'}), 400
+
     else:
         try:
             res = supabase.table('objects').select('nomi').order('id', desc=True).execute()
