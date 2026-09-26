@@ -6,17 +6,25 @@
     <title>Remont Xarajatlari</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background: #f4f6f9; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 650px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
         h2, h3, h4 { color: #333; margin-top: 0; }
         input, button { width: 100%; padding: 12px; margin: 6px 0; box-sizing: border-box; border-radius: 6px; font-size: 15px; }
         input { border: 1px solid #ccc; }
-        button { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:hover { background: #218838; }
         .btn-blue { background: #007bff; }
         .btn-blue:hover { background: #0069d9; }
-        .box { border: 1px solid #e1e4e8; padding: 15px; margin-top: 15px; border-radius: 8px; background: #fff; }
+        .box { border: 1px solid #e1e4e8; padding: 18px; margin-top: 18px; border-radius: 8px; background: #fff; }
         .item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .total { font-weight: bold; text-align: right; margin-top: 12px; font-size: 18px; color: #007bff; }
+        
+        /* JADVAL STYLLARI */
+        .expense-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .expense-table th, .expense-table td { border: 1px solid #e0e0e0; padding: 10px 12px; text-align: left; }
+        .expense-table th { background-color: #f8f9fa; color: #495057; font-weight: 600; }
+        .expense-table td.amount { text-align: right; font-weight: bold; color: #28a745; }
+        .expense-table tr:nth-child(even) { background-color: #fcfcfc; }
+        
+        .total { font-weight: bold; text-align: right; margin-top: 15px; font-size: 18px; color: #007bff; background: #e8f0fe; padding: 12px; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -47,7 +55,23 @@
 
         <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
         <h4>Kiritilgan xarajatlar:</h4>
-        <div id="expList"></div>
+        
+        <!-- XARAJTALARM JADVALI -->
+        <div id="tableContainer">
+            <table class="expense-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px; text-align: center;">№</th>
+                        <th>Xarajat nomi</th>
+                        <th style="text-align: right; width: 150px;">Summasi</th>
+                    </tr>
+                </thead>
+                <tbody id="expTableBody">
+                    <!-- JavaScript ushbu yerga qatorlarni joylaydi -->
+                </tbody>
+            </table>
+        </div>
+
         <div id="totalSum" class="total">Jami: 0 so'm</div>
     </div>
 </div>
@@ -109,25 +133,26 @@
         fetch('/api/expenses_by_param?obekt=' + encodeURIComponent(currentObj))
             .then(res => res.json())
             .then(data => {
-                let div = document.getElementById('expList');
+                let tbody = document.getElementById('expTableBody');
                 let totalDiv = document.getElementById('totalSum');
-                div.innerHTML = "";
+                tbody.innerHTML = "";
                 let total = 0;
 
                 if (!data || data.length === 0) {
-                    div.innerHTML = "<p style='color: #777;'>Bu ob'ektga hali xarajat kiritilmadi.</p>";
+                    tbody.innerHTML = "<tr><td colspan='3' style='text-align: center; color: #777;'>Bu ob'ektga hali xarajat kiritilmadi.</td></tr>";
                     totalDiv.innerText = "Jami: 0 so'm";
                     return;
                 }
 
-                data.forEach(item => {
+                data.forEach((item, index) => {
                     let s = parseInt(item.summa) || 0;
                     total += s;
-                    div.innerHTML += `
-                        <div class="item">
-                            <span>${item.nomi}</span>
-                            <b style="color: #28a745;">${s.toLocaleString('uz-UZ')} so'm</b>
-                        </div>
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="text-align: center;">${index + 1}</td>
+                            <td>${item.nomi}</td>
+                            <td class="amount">${s.toLocaleString('uz-UZ')} so'm</td>
+                        </tr>
                     `;
                 });
 
