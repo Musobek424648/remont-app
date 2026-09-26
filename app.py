@@ -1,114 +1,101 @@
 import os
+import csv
 from flask import Flask, render_template, request, jsonify, send_file
 import pandas as pd
 
 app = Flask(__name__)
 
-# Ma'lumotlarni saqlash uchun fayllar
-DATA_DIR = 'data'
+# Baza papkasi va fayllar manzili
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
 OBJECTS_FILE = os.path.join(DATA_DIR, 'objects.txt')
 EXPENSES_FILE = os.path.join(DATA_DIR, 'expenses.csv')
 
-# Papka va fayllarni yaratish
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
+def init_db():
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR, exist_ok=True)
+    if not os.path.exists(OBJECTS_FILE):
+        with open(OBJECTS_FILE, 'w', encoding='utf-8') as f:
+            pass
+    if not os.path.exists(EXPENSES_FILE):
+        with open(EXPENSES_FILE, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(['obekt', 'nomi', 'summa'])
 
-if not os.path.exists(OBJECTS_FILE):
-    with open(OBJECTS_FILE, 'w', encoding='utf-8') as f:
-        pass
-
-if not os.path.exists(EXPENSES_FILE):
-    df = pd.DataFrame(columns=['obekt', 'nomi', 'summa'])
-    df.to_csv(EXPENSES_FILE, index=False, encoding='utf-8')
-
+init_db()
 
 @app.route('/')
-def home():
+def index():
     return render_template('index.html')
-
 
 @app.route('/api/objects', methods=['GET', 'POST'])
 def handle_objects():
+    init_db()
     if request.method == 'POST':
         data = request.json
-        nomi = data.get('nomi')
+        nomi = data.get('nomi', '').strip()
         if nomi:
-            with open(OBJECTS_FILE, 'r', encoding='utf-8') as f:
-                existing = [line.strip() for line in f.readlines()]
-            if nomi in existing:
-                return jsonify({'error': "Bu ob'ekt allaqachon mavjud!"}), 400
-            
             with open(OBJECTS_FILE, 'a', encoding='utf-8') as f:
-                f.write(f"{nomi}\n")
-            return jsonify({'message': "Ob'ekt muvaffaqiyatli qo'shildi!"})
-        return jsonify({'error': "Ob'ekt nomi kiritilmadi!"}), 400
-
-    if os.path.exists(OBJECTS_FILE):
-        with open(OBJECTS_FILE, 'r', encoding='utf-8') as f:
-            objects = [line.strip() for line in f.readlines() if line.strip()]
-        return jsonify([{'nomi': obj} for obj in objects])
-    return jsonify([])
-
+                f.write(nomi + '\n')
+            return jsonify({'status': 'ok'})
+        return jsonify({'error': 'Nomi bo`sh'}), 400
+    else:
+        objects = []
+        if os.path.exists(OBJECTS_FILE):
+            with open(OBJECTS_FILE, 'r', encoding='utf-8') as f:
+                objects = [{'nomi': line.strip()} for line in f if line.strip()]
+        return jsonify(objects)
 
 @app.route('/api/expenses', methods=['POST'])
 def add_expense():
+    init_db()
     data = request.json
     obekt = data.get('obekt')
     nomi = data.get('nomi')
     summa = data.get('summa')
-
-    if not all([obekt, nomi, summa]):
-        return jsonify({'error': "Barcha maydonlarni to'ldiring!"}), 400
-
-    try:
-        summa = float(summa)
-    except ValueError:
-        return jsonify({'error': "Summa raqam bo'lishi kerak!"}), 400
-
-    df = pd.read_csv(EXPENSES_FILE, encoding='utf-8')
-    new_row = pd.DataFrame([{'obekt': obekt, 'nomi': nomi, 'summa': summa}])
-    df = pd.concat([df, new_row], ignore_index=True)
-    df.to_csv(EXPENSES_FILE, index=False, encoding='utf-8')
-
-    return jsonify({'message': "Xarajat saqlandi!"})
-
-
-@app.route('/api/expenses/<obekt_nomi>', methods=['GET'])
-def get_object_expenses(obekt_nomi):
-    if not os.path.exists(EXPENSES_FILE):
-        return jsonify([])
     
-    df = pd.read_csv(EXPENSES_FILE, encoding='utf-8')
-    filtered = df[df['obekt'] == obekt_nomi]
-    return jsonify(filtered.to_dict(orient='records'))
+    if obekt and nomi and summa:
+        with open(EXPENSES_FILE, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow([obekt, nomi, summa])
+        return jsonify({'status': 'ok'})
+    return jsonify({'error': 'Noto`g`ri ma`lumot'}), 400
 
+@app.route('/api/expenses/<path:obekt_nomi>', methods=['GET'])
+def get_expenses(obekt_nomi):
+    init_db()
+    expenses = []
+    if os.path.exists(EXPENSES_FILE):
+        with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get('obekt') == obekt_nomi:
+                    expenses.append({'nomi': row['nomi'], 'summa': int(row['summa'])})
+    return jsonify(expenses)
 
 @app.route('/api/report', methods=['GET'])
 def get_report():
-    if not os.path.exists(EXPENSES_FILE):
-        return jsonify([])
-    
-    df = pd.read_csv(EXPENSES_FILE, encoding='utf-8')
-    if df.empty:
-        return jsonify([])
-    
-    report = df.groupby('obekt')['summa'].sum().reset_index()
-    return jsonify(report.to_dict(orient='records'))
-
-
-@app.route('/download/excel', methods=['GET'])
-def download_excel():
-    excel_path = os.path.join(DATA_DIR, 'hisobot.xlsx')
-    
+    init_db()
+    report = {}
     if os.path.exists(EXPENSES_FILE):
-        df = pd.read_csv(EXPENSES_FILE, encoding='utf-8')
-    else:
-        df = pd.DataFrame(columns=['obekt', 'nomi', 'summa'])
+        with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                obekt = row.get('obekt')
+                summa = int(row.get('summa', 0))
+                report[obekt] = report.get(obekt, 0) + summa
+    result = [{'obekt': k, 'summa': v} for k, v in report.items()]
+    return jsonify(result)
 
-    # Excel fayl ko'rinishida saqlash
-    df.to_excel(excel_path, index=False, engine='openpyxl')
-    return send_file(excel_path, as_attachment=True, download_name='remont_xarajatlari.xlsx')
-
+@app.route('/download/excel')
+def download_excel():
+    init_db()
+    excel_path = os.path.join(DATA_DIR, 'hisobot.xlsx')
+    if os.path.exists(EXPENSES_FILE):
+        df = pd.read_csv(EXPENSES_FILE)
+        df.to_excel(excel_path, index=False)
+        return send_file(excel_path, as_attachment=True)
+    return "Fayl topilmadi", 404
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=5000)
