@@ -5,148 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ta'mirlash Xarajatlari</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 20px;
-            background: #f4f6f9;
-        }
-        .container {
-            max-width: 650px;
-            margin: auto;
-            background: #fff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background: #f4f6f9; }
+        .container { max-width: 650px; margin: auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
         h1, h2, h3 { color: #333; margin-top: 0; }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 6px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 15px;
-        }
-        .btn-main {
-            background-color: #28a745;
-            color: white;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-        }
+        .form-group { margin-bottom: 15px; }
+        input, button { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        .btn-main { background-color: #28a745; color: white; font-weight: bold; border: none; cursor: pointer; }
         .btn-main:hover { background-color: #218838; }
         
-        .object-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #f8f9fa;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #e9ecef;
-        }
-        .object-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        .object-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .btn-edit {
-            background-color: #ffc107;
-            color: #212529;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-        }
-        .btn-edit:hover { background-color: #e0a800; }
-        
-        .btn-add-exp {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-        }
-        .btn-add-exp:hover { background-color: #0069d9; }
+        .object-item { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #e9ecef; }
+        .object-title { font-size: 16px; font-weight: 600; color: #2c3e50; }
+        .object-actions { display: flex; gap: 8px; }
+        .btn-edit { background-color: #ffc107; color: #212529; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .btn-add-exp { background-color: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px; margin-top: 10px; }
 
-        .btn-delete {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 15px;
-            margin-top: 10px;
-        }
-        .btn-delete:hover { background-color: #c82333; }
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 550px; position: relative; max-height: 85vh; overflow-y: auto; }
+        .close-btn { position: absolute; right: 15px; top: 10px; font-size: 24px; cursor: pointer; color: #888; }
 
-        /* Modal oyna */
-        .modal {
-            display: none; 
-            position: fixed; 
-            z-index: 1000; 
-            left: 0;
-            top: 0;
-            width: 100%; 
-            height: 100%; 
-            background-color: rgba(0,0,0,0.5); 
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-        .close-btn {
-            position: absolute;
-            right: 15px;
-            top: 10px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #888;
-        }
-        .close-btn:hover { color: #000; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f8f9fa; }
-        .total-box {
-            margin-top: 15px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #007bff;
-            text-align: right;
-        }
+        .total-box { margin-top: 15px; font-size: 16px; font-weight: bold; color: #007bff; text-align: right; }
+        
+        .action-btns { display: flex; gap: 4px; }
+        .btn-sm-edit { background: #ffc107; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-sm-del { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -154,7 +40,6 @@
     <div class="container">
         <h1>Ta'mirlash Xarajatlari</h1>
 
-        <!-- Yangi obyekt qo'shish -->
         <h2>Yangi Obyekt Qo'shish</h2>
         <div class="form-group">
             <input type="text" id="newObjectInput" placeholder="Obyekt nomi (masalan: Oshxona)">
@@ -163,17 +48,15 @@
 
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
 
-        <!-- Obyektlar ro'yxati -->
         <h2>Obyektlar Ro'yxati</h2>
         <div id="objectsList"></div>
     </div>
 
-    <!-- 1. Tahrirlash va O'chirish Modali -->
+    <!-- Obyekt Tahrirlash Modali -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeEditModal()">&times;</span>
             <h2>Obyektni Tahrirlash</h2>
-            
             <div class="form-group">
                 <label style="font-weight: bold;">Yangi nom kiriting:</label>
                 <input type="text" id="editObjectNameInput">
@@ -183,17 +66,18 @@
         </div>
     </div>
 
-    <!-- 2. Xarajatlar Modali -->
+    <!-- Xarajatlar Modali -->
     <div id="expenseModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeExpenseModal()">&times;</span>
             <h2 id="modalObjectName" style="color: #007bff;">Obyekt Xarajatlari</h2>
             
-            <h3>Yangi Xarajat Qo'shish</h3>
+            <h3 id="expenseFormTitle">Yangi Xarajat Qo'shish</h3>
             <div class="form-group">
                 <input type="text" id="expenseName" placeholder="Xarajat nomi (masalan: Kafel)">
                 <input type="number" id="expenseAmount" placeholder="Summa (so'm)">
-                <button class="btn-main" onclick="addExpense()">Saqlash</button>
+                <button class="btn-main" id="saveExpenseBtn" onclick="addOrUpdateExpense()">Saqlash</button>
+                <button id="cancelEditExpBtn" style="display:none; background:#6c757d; color:white; border:none; padding:8px; border-radius:6px; margin-top:5px; cursor:pointer;" onclick="resetExpenseForm()">Bekor qilish</button>
             </div>
 
             <hr style="margin: 15px 0;">
@@ -204,6 +88,7 @@
                     <tr>
                         <th>Xarajat Nomi</th>
                         <th>Summa (so'm)</th>
+                        <th>Amallar</th>
                     </tr>
                 </thead>
                 <tbody id="expensesTableBody"></tbody>
@@ -216,25 +101,20 @@
     <script>
         let currentEditingObject = '';
         let currentSelectedObject = '';
+        let currentEditingExpenseId = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadObjects();
-        });
+        document.addEventListener('DOMContentLoaded', () => { loadObjects(); });
 
-        // Obyektlarni yuklash
         async function loadObjects() {
             try {
                 const res = await fetch('/api/objects');
                 const objects = await res.json();
-                
                 const list = document.getElementById('objectsList');
                 list.innerHTML = '';
-
                 if (objects.length === 0) {
                     list.innerHTML = '<p style="color:#777;">Hali obyektlar qo\'shilmagan.</p>';
                     return;
                 }
-
                 objects.forEach(obj => {
                     const item = document.createElement('div');
                     item.className = 'object-item';
@@ -247,148 +127,139 @@
                     `;
                     list.appendChild(item);
                 });
-            } catch (err) {
-                console.error("Obyektlarni yuklashda xatolik:", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // Yangi obyekt qo'shish
         async function addObject() {
             const input = document.getElementById('newObjectInput');
             const nomi = input.value.trim();
             if (!nomi) return alert("Obyekt nomini kiriting!");
-
             await fetch('/api/objects', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nomi: nomi })
             });
-
             input.value = '';
             loadObjects();
         }
 
-        // Tahrirlash modalini ochish
         function openEditModal(objectName) {
             currentEditingObject = objectName;
             document.getElementById('editObjectNameInput').value = objectName;
             document.getElementById('editModal').style.display = 'flex';
         }
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
-
-        // Yangi nomni saqlash
         async function saveEditedObject() {
             const newName = document.getElementById('editObjectNameInput').value.trim();
             if (!newName) return alert("Obyekt nomini kiriting!");
             if (newName === currentEditingObject) return closeEditModal();
-
-            try {
-                const response = await fetch('/api/objects', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        old_nomi: currentEditingObject,
-                        new_nomi: newName
-                    })
-                });
-
-                if (response.ok) {
-                    closeEditModal();
-                    loadObjects();
-                } else {
-                    alert("Xatolik yuz berdi!");
-                }
-            } catch (error) {
-                console.error("Xatolik:", error);
-            }
+            const response = await fetch('/api/objects', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ old_nomi: currentEditingObject, new_nomi: newName })
+            });
+            if (response.ok) { closeEditModal(); loadObjects(); }
         }
 
-        // Obyektni o'chirish
         async function deleteObject() {
-            if (!confirm(`Haqiqatan ham "${currentEditingObject}" obyektini va unga tegishli barcha xarajatlarni o'chirmoqchimisiz?`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/objects', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nomi: currentEditingObject })
-                });
-
-                if (response.ok) {
-                    closeEditModal();
-                    loadObjects();
-                } else {
-                    alert("O'chirishda xatolik yuz berdi!");
-                }
-            } catch (error) {
-                console.error("Xatolik:", error);
-            }
+            if (!confirm(`"${currentEditingObject}" obyektini o'chirmoqchimisiz?`)) return;
+            const response = await fetch('/api/objects', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nomi: currentEditingObject })
+            });
+            if (response.ok) { closeEditModal(); loadObjects(); }
         }
 
-        // Xarajatlar modalini ochish
         function openExpenseModal(objectName) {
             currentSelectedObject = objectName;
             document.getElementById('modalObjectName').textContent = objectName;
             document.getElementById('expenseModal').style.display = 'flex';
+            resetExpenseForm();
             loadExpenses();
         }
+        function closeExpenseModal() { document.getElementById('expenseModal').style.display = 'none'; }
 
-        function closeExpenseModal() {
-            document.getElementById('expenseModal').style.display = 'none';
+        function resetExpenseForm() {
+            currentEditingExpenseId = null;
             document.getElementById('expenseName').value = '';
             document.getElementById('expenseAmount').value = '';
+            document.getElementById('expenseFormTitle').textContent = "Yangi Xarajat Qo'shish";
+            document.getElementById('saveExpenseBtn').textContent = "Saqlash";
+            document.getElementById('cancelEditExpBtn').style.display = 'none';
         }
 
-        // Xarajat saqlash
-        async function addExpense() {
+        function editExpenseInline(id, name, amount) {
+            currentEditingExpenseId = id;
+            document.getElementById('expenseName').value = name;
+            document.getElementById('expenseAmount').value = amount;
+            document.getElementById('expenseFormTitle').textContent = "Xarajatni O'zgartirish";
+            document.getElementById('saveExpenseBtn').textContent = "Yangilash";
+            document.getElementById('cancelEditExpBtn').style.display = 'block';
+        }
+
+        async function addOrUpdateExpense() {
             const nomi = document.getElementById('expenseName').value.trim();
             const summa = document.getElementById('expenseAmount').value.trim();
-
             if (!nomi || !summa) return alert("Xarajat nomi va summasini kiriting!");
 
-            await fetch('/api/expenses', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ obekt: currentSelectedObject, nomi: nomi, summa: summa })
-            });
-
-            document.getElementById('expenseName').value = '';
-            document.getElementById('expenseAmount').value = '';
+            if (currentEditingExpenseId) {
+                // Güncelleme işlemi
+                await fetch('/api/expenses', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: currentEditingExpenseId, nomi: nomi, summa: summa })
+                });
+            } else {
+                // Yeni Ekleme işlemi
+                await fetch('/api/expenses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ obekt: currentSelectedObject, nomi: nomi, summa: summa })
+                });
+            }
+            resetExpenseForm();
             loadExpenses();
         }
 
-        // Xarajatlarni yuklash
+        async function deleteExpense(id) {
+            if (!confirm("Ushbu xarajatni o'chirmoqchimisiz?")) return;
+            await fetch('/api/expenses', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            });
+            loadExpenses();
+        }
+
         async function loadExpenses() {
             const tbody = document.getElementById('expensesTableBody');
             const totalDiv = document.getElementById('totalAmount');
-
             tbody.innerHTML = '';
             totalDiv.textContent = 'Jami: 0 so\'m';
 
             try {
                 const res = await fetch(`/api/expenses_by_param?obekt=${encodeURIComponent(currentSelectedObject)}`);
                 const expenses = await res.json();
-
                 let total = 0;
                 expenses.forEach(exp => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${exp.nomi}</td>
                         <td>${Number(exp.summa).toLocaleString('uz-UZ')} so'm</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm-edit" onclick="editExpenseInline(${exp.id}, '${exp.nomi}', ${exp.summa})">✏️</button>
+                                <button class="btn-sm-del" onclick="deleteExpense(${exp.id})">🗑️</button>
+                            </div>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                     total += Number(exp.summa);
                 });
-
                 totalDiv.textContent = `Jami: ${total.toLocaleString('uz-UZ')} so'm`;
-            } catch (err) {
-                console.error("Xarajatlarni yuklashda xatolik:", err);
-            }
+            } catch (err) { console.error(err); }
         }
     </script>
 </body>
