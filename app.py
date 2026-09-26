@@ -1,18 +1,15 @@
 import os
 import csv
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-OBJECTS_FILE = 'objects.csv'
+OBJECTS_FILE = 'objects.txt'
 EXPENSES_FILE = 'expenses.csv'
 
-def init_db():
+def init_files():
     if not os.path.exists(OBJECTS_FILE):
-        with open(OBJECTS_FILE, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['nomi'])
-
+        open(OBJECTS_FILE, 'w', encoding='utf-8').close()
     if not os.path.exists(EXPENSES_FILE):
         with open(EXPENSES_FILE, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
@@ -22,34 +19,35 @@ def init_db():
 def index():
     return render_template('index.html')
 
+# Ob'ektlarni olish va qo'shish
 @app.route('/api/objects', methods=['GET', 'POST'])
 def handle_objects():
-    init_db()
+    init_files()
     if request.method == 'POST':
-        data = request.json or {}
-        nomi = str(data.get('nomi', '')).strip()
+        data = request.get_json() or {}
+        nomi = data.get('nomi', '').strip()
         if nomi:
-            with open(OBJECTS_FILE, 'a', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow([nomi])
+            with open(OBJECTS_FILE, 'a', encoding='utf-8') as f:
+                f.write(nomi + '\n')
         return jsonify({'status': 'ok'})
     else:
         objects = []
         if os.path.exists(OBJECTS_FILE):
             with open(OBJECTS_FILE, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    if row.get('nomi'):
-                        objects.append({'nomi': row['nomi'].strip()})
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        objects.append({'nomi': line})
         return jsonify(objects)
 
+# Xarajat qo'shish
 @app.route('/api/expenses', methods=['POST'])
 def add_expense():
-    init_db()
-    data = request.json or {}
-    obekt = str(data.get('obekt', '')).strip()
-    nomi = str(data.get('nomi', '')).strip()
-    summa = str(data.get('summa', '0')).strip()
+    init_files()
+    data = request.get_json() or {}
+    obekt = data.get('obekt', '').strip()
+    nomi = data.get('nomi', '').strip()
+    summa = data.get('summa', '0').strip()
 
     if obekt and nomi:
         with open(EXPENSES_FILE, 'a', newline='', encoding='utf-8') as f:
@@ -58,54 +56,24 @@ def add_expense():
 
     return jsonify({'status': 'ok'})
 
+# Tanlangan ob'ekt xarajatlarini ko'rsatish
 @app.route('/api/expenses_by_param', methods=['GET'])
 def get_expenses_param():
-    init_db()
-    obekt_nomi = request.args.get('obekt', '').strip().lower()
+    init_files()
+    obekt_nomi = request.args.get('obekt', '').strip()
     expenses = []
-    
+
     if os.path.exists(EXPENSES_FILE):
         with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                row_obekt = str(row.get('obekt', '')).strip().lower()
-                if row_obekt == obekt_nomi:
-                    raw_sum = str(row.get('summa', '0')).strip()
-                    try:
-                        val = int(float(raw_sum))
-                    except (ValueError, TypeError):
-                        val = 0
-                    
+                if row.get('obekt', '').strip() == obekt_nomi:
                     expenses.append({
-                        'nomi': str(row.get('nomi', '')).strip(),
-                        'summa': val
+                        'nomi': row.get('nomi', ''),
+                        'summa': row.get('summa', '0')
                     })
-                    
+
     return jsonify(expenses)
 
-@app.route('/download/excel', methods=['GET'])
-def download_excel():
-    init_db()
-    import openpyxl
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Xarajatlar"
-    
-    ws.append(['Obekt', 'Xarajat Nomi', 'Summa'])
-
-    if os.path.exists(EXPENSES_FILE):
-        with open(EXPENSES_FILE, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                try:
-                    s = float(row.get('summa', 0))
-                except:
-                    s = 0
-                ws.append([row.get('obekt', ''), row.get('nomi', ''), s])
-
-    file_path = "xarajatlar_hisoboti.xlsx"
-    wb.save(file_path)
-    return send_file(file_path, as_attachment=True)
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
