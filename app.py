@@ -75,7 +75,7 @@ def manage_expenses():
             res = supabase.table('expenses').insert({
                 'obekt': obekt,
                 'nomi': nomi,
-                'summa': float(summa)
+                'summa': int(float(summa))  # Integer xatoligini oldini olish uchun
             }).execute()
             return jsonify(res.data)
         except Exception as e:
@@ -89,7 +89,7 @@ def manage_expenses():
         try:
             res = supabase.table('expenses').update({
                 'nomi': nomi,
-                'summa': float(summa)
+                'summa': int(float(summa))  # Integer xatoligini oldini olish uchun
             }).eq('id', exp_id).execute()
             return jsonify({'status': 'ok', 'data': res.data})
         except Exception as e:
@@ -157,7 +157,7 @@ def download_excel():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# HAR BIR OB'EKT UCHUN ALOHIDA EXCEL YUKLAB OLISH (Siz so'ragan qism)
+# Har bir ob'ekt uchun alohida Excel yuklab olish
 @app.route('/api/expenses/<path:obekt_nomi>/excel', methods=['GET'])
 def download_object_excel(obekt_nomi):
     try:
