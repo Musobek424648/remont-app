@@ -1,188 +1,203 @@
 import os
-import io
-import pandas as pd
+import sqlite3
 from flask import Flask, render_template, request, jsonify, send_file
-from supabase import create_client, Client
+from werkzeug.utils import secure_filename
+import pandas as pd
 
 app = Flask(__name__)
 
-# Supabase ma'lumotlari (Render'dagi Environment variables yoki to'g'ridan-to'g'ri)
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "SIZNING_SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "SIZNING_SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Папка для сохранения чеков
+UPLOAD_FOLDER = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+DB_NAME = 'remont.db'
+
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    # Объекты
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS obektlar (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nomi TEXT UNIQUE NOT NULL
+        )
+    ''')
+    # Расходы с поддержкой chek_url
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            obekt TEXT NOT NULL,
+            nomi TEXT NOT NULL,
+            summa REAL NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            chek_url TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Ob'ektlarni olish va qo'shish
+# --- ОБЪЕКТЫ ---
+
 @app.route('/api/objects', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def manage_objects():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
     if request.method == 'GET':
-        try:
-            res = supabase.table('objects').select('*').execute()
-            return jsonify(res.data or [])
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+        cursor.execute('SELECT * FROM obektlar')
+        objects = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return jsonify(objects)
 
     elif request.method == 'POST':
         data = request.json
         nomi = data.get('nomi')
         if not nomi:
-            return jsonify({'error': 'Ob\'ekt nomi bo\'sh bo\'lishi mumkin emas'}), 400
+            return jsonify({'error': 'Nomi kiritilmadi'}), 400
         try:
-            res = supabase.table('objects').insert({'nomi': nomi}).execute()
-            return jsonify(res.data)
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            cursor.execute('INSERT INTO obektlar (nomi) VALUES (?)', (nomi,))
+            conn.commit()
+            conn.close()
+            return jsonify({'status': 'ok'})
+        except sqlite3.IntegrityError:
+            conn.close()
+            return jsonify({'error': 'Bu ob`ekt allaqachon mavjud!'}), 400
 
     elif request.method == 'PUT':
         data = request.json
         old_nomi = data.get('old_nomi')
         new_nomi = data.get('new_nomi')
-        if not old_nomi or not new_nomi:
-            return jsonify({'status': 'error', 'message': 'Ma\'lumotlar yetishmayapti'}), 400
-        try:
-            supabase.table('objects').update({'nomi': new_nomi}).eq('nomi', old_nomi).execute()
-            supabase.table('expenses').update({'obekt': new_nomi}).eq('obekt', old_nomi).execute()
-            return jsonify({'status': 'ok'})
-        except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)}), 500
+        cursor.execute('UPDATE obektlar SET nomi = ? WHERE nomi = ?', (new_nomi, old_nomi))
+        cursor.execute('UPDATE expenses SET obekt = ? WHERE obekt = ?', (new_nomi, old_nomi))
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'ok'})
 
     elif request.method == 'DELETE':
         data = request.json
         nomi = data.get('nomi')
-        if not nomi:
-            return jsonify({'status': 'error', 'message': 'Nomi ko\'rsatilmagan'}), 400
-        try:
-            supabase.table('expenses').delete().eq('obekt', nomi).execute()
-            supabase.table('objects').delete().eq('nomi', nomi).execute()
-            return jsonify({'status': 'ok'})
-        except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)}), 500
+        cursor.execute('DELETE FROM obektlar WHERE nomi = ?', (nomi,))
+        cursor.execute('DELETE FROM expenses WHERE obekt = ?', (nomi,))
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'ok'})
 
-# Xarajatlar bo'yicha amallar
+# --- XARAJATLAR ---
+
+@app.route('/api/expenses/<path:nomi>', methods=['GET'])
+def get_expenses(nomi):
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM expenses WHERE obekt = ? ORDER BY created_at DESC', (nomi,))
+    expenses = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(expenses)
+
 @app.route('/api/expenses', methods=['POST', 'PUT', 'DELETE'])
 def manage_expenses():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
     if request.method == 'POST':
         data = request.json
         obekt = data.get('obekt')
         nomi = data.get('nomi')
         summa = data.get('summa')
         if not obekt or not nomi or not summa:
-            return jsonify({'error': 'Barcha maydonlarni to\'ldiring'}), 400
-        try:
-            res = supabase.table('expenses').insert({
-                'obekt': obekt,
-                'nomi': nomi,
-                'summa': int(float(summa))  # Integer xatoligini oldini olish uchun
-            }).execute()
-            return jsonify(res.data)
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            return jsonify({'error': 'Ma`lumotlar to`liq emas'}), 400
+        
+        cursor.execute('INSERT INTO expenses (obekt, nomi, summa) VALUES (?, ?, ?)', (obekt, nomi, summa))
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'ok'})
 
     elif request.method == 'PUT':
         data = request.json
         exp_id = data.get('id')
         nomi = data.get('nomi')
         summa = data.get('summa')
-        try:
-            res = supabase.table('expenses').update({
-                'nomi': nomi,
-                'summa': int(float(summa))  # Integer xatoligini oldini olish uchun
-            }).eq('id', exp_id).execute()
-            return jsonify({'status': 'ok', 'data': res.data})
-        except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)}), 500
+        cursor.execute('UPDATE expenses SET nomi = ?, summa = ? WHERE id = ?', (nomi, summa, exp_id))
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'ok'})
 
     elif request.method == 'DELETE':
         data = request.json
         exp_id = data.get('id')
-        try:
-            supabase.table('expenses').delete().eq('id', exp_id).execute()
-            return jsonify({'status': 'ok'})
-        except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)}), 500
+        cursor.execute('DELETE FROM expenses WHERE id = ?', (exp_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'ok'})
 
-# Muayyan ob'ekt xarajatlarini olish
-@app.route('/api/expenses/<path:obekt_nomi>', methods=['GET'])
-def get_object_expenses(obekt_nomi):
-    try:
-        res = supabase.table('expenses').select('*').eq('obekt', obekt_nomi).order('id', desc=True).execute()
-        return jsonify(res.data or [])
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# --- CHEK YUKLASH ---
 
-# Umumiy hisobot
+@app.route('/api/upload-receipt', methods=['POST'])
+def upload_receipt():
+    if 'chek' not in request.files:
+        return jsonify({'error': 'Fayl topilmadi'}), 400
+    
+    file = request.files['chek']
+    expense_id = request.form.get('expense_id')
+    
+    if file.filename == '':
+        return jsonify({'error': 'Fayl tanlanmagan'}), 400
+        
+    if file and expense_id:
+        filename = secure_filename(f"receipt_{expense_id}_{file.filename}")
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        chek_url = f"/{filepath}"
+        
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute('UPDATE expenses SET chek_url = ? WHERE id = ?', (chek_url, expense_id))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'status': 'ok', 'chek_url': chek_url})
+    
+    return jsonify({'error': 'Xatolik yuz berdi'}), 400
+
+# --- HISOBOT VA EXCEL ---
+
 @app.route('/api/report', methods=['GET'])
 def get_report():
-    try:
-        res = supabase.table('expenses').select('obekt, summa').execute()
-        data = res.data or []
-        
-        report_dict = {}
-        for item in data:
-            obj = item.get('obekt')
-            summa = float(item.get('summa', 0))
-            report_dict[obj] = report_dict.get(obj, 0) + summa
-            
-        report_list = [{'obekt': k, 'summa': v} for k, v in report_dict.items()]
-        return jsonify(report_list)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('SELECT obekt, SUM(summa) as summa FROM expenses GROUP BY obekt')
+    report = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(report)
 
-# Barcha xarajatlarni Excelga yuklab olish
 @app.route('/download/excel', methods=['GET'])
-def download_excel():
-    try:
-        res = supabase.table('expenses').select('obekt, nomi, summa, created_at').execute()
-        data = res.data or []
-        
-        formatted_data = []
-        for item in data:
-            formatted_data.append({
-                'Ob\'ekt': item.get('obekt', ''),
-                'Sana va Vaqt': item.get('created_at', ''),
-                'Xarajat Nomi': item.get('nomi', ''),
-                'Summa (so\'m)': item.get('summa', 0)
-            })
-            
-        df = pd.DataFrame(formatted_data)
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Barcha Xarajatlar')
-        output.seek(0)
-        
-        return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name='umumiy_xarajatlar.xlsx')
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+def download_all_excel():
+    conn = sqlite3.connect(DB_NAME)
+    df = pd.read_sql_query("SELECT obekt, nomi, summa, created_at FROM expenses", conn)
+    conn.close()
+    
+    file_path = "umumiy_hisobot.xlsx"
+    df.to_excel(file_path, index=False)
+    return send_file(file_path, as_attachment=True)
 
-# Har bir ob'ekt uchun alohida Excel yuklab olish
-@app.route('/api/expenses/<path:obekt_nomi>/excel', methods=['GET'])
-def download_object_excel(obekt_nomi):
-    try:
-        res = supabase.table('expenses').select('nomi, summa, created_at').eq('obekt', obekt_nomi).order('id', desc=True).execute()
-        data = res.data or []
-        
-        formatted_data = []
-        for item in data:
-            formatted_data.append({
-                'Sana va Vaqt': item.get('created_at', ''),
-                'Xarajat Nomi': item.get('nomi', ''),
-                'Summa (so\'m)': item.get('summa', 0)
-            })
-            
-        df = pd.DataFrame(formatted_data)
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Xarajatlar')
-        output.seek(0)
-        
-        filename = f"{obekt_nomi}_xarajatlari.xlsx"
-        return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name=filename)
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+@app.route('/api/expenses/<path:nomi>/excel', methods=['GET'])
+def download_object_excel(nomi):
+    conn = sqlite3.connect(DB_NAME)
+    df = pd.read_sql_query("SELECT nomi, summa, created_at FROM expenses WHERE obekt = ?", conn, params=(nomi,))
+    conn.close()
+    
+    file_path = f"{nomi}_xarajatlar.xlsx"
+    df.to_excel(file_path, index=False)
+    return send_file(file_path, as_attachment=True)
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    init_db()
+    app.run(debug=True, port=5000)
