@@ -1,3 +1,4 @@
+import os
 import io
 import pandas as pd
 from flask import Flask, render_template, request, jsonify, send_file
@@ -5,9 +6,9 @@ from supabase import create_client, Client
 
 app = Flask(__name__)
 
-# Supabase ma'lumotlari (o'zingizning kalitlaringizni shu yerga yozasiz)
-SUPABASE_URL = "SIZNING_SUPABASE_URL"
-SUPABASE_KEY = "SIZNING_SUPABASE_KEY"
+# Supabase ma'lumotlari (Render'dagi Environment variables yoki to'g'ridan-to'g'ri)
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "SIZNING_SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "SIZNING_SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route('/')
@@ -42,9 +43,7 @@ def manage_objects():
         if not old_nomi or not new_nomi:
             return jsonify({'status': 'error', 'message': 'Ma\'lumotlar yetishmayapti'}), 400
         try:
-            # Ob'ekt nomini yangilash
             supabase.table('objects').update({'nomi': new_nomi}).eq('nomi', old_nomi).execute()
-            # Xarajatlardagi bog'langan ob'ekt nomini ham yangilash
             supabase.table('expenses').update({'obekt': new_nomi}).eq('obekt', old_nomi).execute()
             return jsonify({'status': 'ok'})
         except Exception as e:
@@ -56,9 +55,7 @@ def manage_objects():
         if not nomi:
             return jsonify({'status': 'error', 'message': 'Nomi ko\'rsatilmagan'}), 400
         try:
-            # Avval ob'ektga tegishli xarajatlarni o'chiramiz
             supabase.table('expenses').delete().eq('obekt', nomi).execute()
-            # Keyin ob'ektning o'zini o'chiramiz
             supabase.table('objects').delete().eq('nomi', nomi).execute()
             return jsonify({'status': 'ok'})
         except Exception as e:
@@ -134,7 +131,7 @@ def get_report():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Umumiy Excel yuklab olish
+# Barcha xarajatlarni Excelga yuklab olish
 @app.route('/download/excel', methods=['GET'])
 def download_excel():
     try:
@@ -151,7 +148,6 @@ def download_excel():
             })
             
         df = pd.DataFrame(formatted_data)
-        
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Barcha Xarajatlar')
@@ -161,11 +157,11 @@ def download_excel():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Har bir ob'ekt uchun alohida Excel yuklab olish
+# HAR BIR OB'EKT UCHUN ALOHIDA EXCEL YUKLAB OLISH (Siz so'ragan qism)
 @app.route('/api/expenses/<path:obekt_nomi>/excel', methods=['GET'])
 def download_object_excel(obekt_nomi):
     try:
-        res = supabase.table('expenses').select('id, nomi, summa, created_at').eq('obekt', obekt_nomi).order('id', desc=True).execute()
+        res = supabase.table('expenses').select('nomi, summa, created_at').eq('obekt', obekt_nomi).order('id', desc=True).execute()
         data = res.data or []
         
         formatted_data = []
@@ -177,7 +173,6 @@ def download_object_excel(obekt_nomi):
             })
             
         df = pd.DataFrame(formatted_data)
-        
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Xarajatlar')
@@ -189,4 +184,5 @@ def download_object_excel(obekt_nomi):
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
