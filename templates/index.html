@@ -99,7 +99,10 @@
 </head>
 <body>
     <div class="container py-5">
-        <h2 class="text-center mb-4 fw-bold">🏗️ Remont Xarajatlari</h2>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold m-0">🏗️ Remont Xarajatlari</h2>
+            <a href="/logout" class="btn btn-outline-danger btn-sm">Chiqish (Logout)</a>
+        </div>
 
         <!-- Menyular -->
         <ul class="nav nav-pills nav-justified mb-4 p-1 card" id="pills-tab" role="tablist">
@@ -136,7 +139,6 @@
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <h4 id="current-object-title" class="text-warning fw-bold m-0"></h4>
                         <div>
-                            <!-- Har bir ob'ekt uchun alohida Excel yuklab olish tugmasi -->
                             <a id="download-excel-btn" href="#" class="btn btn-sm btn-success me-2">📥 Excelga yuklash</a>
                             <button class="btn btn-sm btn-outline-warning me-2" onclick="editCurrentObject()">✏️ Tahrirlash</button>
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteCurrentObject()">🗑️ O'chirish</button>
@@ -310,7 +312,6 @@
                         return;
                     }
 
-                    // Sanalar bo'yicha guruhlash
                     const groupedByDate = {};
                     data.forEach(exp => {
                         totalSum += Number(exp.summa || 0);
@@ -325,7 +326,6 @@
                         groupedByDate[dateKey].push(exp);
                     });
 
-                    // Har bir sana uchun alohida jadval qurish
                     for (const [dateStr, items] of Object.entries(groupedByDate)) {
                         let dayTotal = items.reduce((sum, item) => sum + Number(item.summa || 0), 0);
 
@@ -340,7 +340,6 @@
                                 timeStr = d.toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'});
                             }
 
-                            // Chek bor yoki yo'qligiga qarab tugma ko'rinishi
                             let receiptBtn = `<button class="btn btn-sm btn-outline-info me-1" title="Chek yuklash" onclick="triggerUpload(${exp.id})">📎</button>`;
                             if (exp.chek_url) {
                                 receiptBtn = `<a href="${exp.chek_url}" target="_blank" class="btn btn-sm btn-info me-1" title="Chekni ko'rish">🧾</a>`;
@@ -353,7 +352,7 @@
                                     <td class="text-end text-success fw-bold">${Number(exp.summa).toLocaleString()} so'm</td>
                                     <td class="text-center" style="width: 150px;">
                                         ${receiptBtn}
-                                        <button class="btn btn-sm btn-outline-primary me-1" title="Tahrirlash" onclick="editExpense(${exp.id}, '${exp.nomi}', ${exp.summa})">✏️</button>
+                                        <button class="btn btn-sm btn-outline-primary me-1" title="Tahrirlash" onclick="editExpense(${exp.id}, '${exp.nomi}',${exp.summa})">✏️</button>
                                         <button class="btn btn-sm btn-outline-danger" title="O'chirish" onclick="deleteExpense(${exp.id})">🗑️</button>
                                     </td>
                                 </tr>
@@ -398,7 +397,6 @@
             formData.append("chek", file);
             formData.append("expense_id", selectedExpenseIdForReceipt);
 
-            // Hozirgi kunda backendda chek qabul qiluvchi API (/api/upload-receipt) bo'lishi kerak
             fetch("/api/upload-receipt", {
                 method: "POST",
                 body: formData
@@ -411,7 +409,7 @@
                 } else {
                     alert(data.error || "Chekni yuklashda xatolik yuz berdi!");
                 }
-                input.value = ""; // inputni tozalash
+                input.value = "";
             })
             .catch(err => {
                 alert("Server bilan xatolik yuz berdi!");
