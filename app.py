@@ -1,29 +1,31 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 from werkzeug.utils import secure_filename
 import pandas as pd
 
 app = Flask(__name__)
+app.secret_key = 'remont_maxfiy_kalit_soz'
 
-# Папка для сохранения чеков
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 DB_NAME = 'remont.db'
 
+# Admin login va paroli
+ADMIN_USER = "admin"
+ADMIN_PASS = "1234"
+
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    # Объекты
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS obektlar (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nomi TEXT UNIQUE NOT NULL
         )
     ''')
-    # Расходы с поддержкой chek_url
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS expenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,14 +39,36 @@ def init_db():
     conn.commit()
     conn.close()
 
+# --- LOGIN ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username == ADMIN_USER and password == ADMIN_PASS:
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error="Login yoki parol xato!")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
+
 @app.route('/')
 def index():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     return render_template('index.html')
 
-# --- ОБЪЕКТЫ ---
-
+# --- OB'EKTLAR ---
 @app.route('/api/objects', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def manage_objects():
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Ruxsat etilmagan'}), 401
+
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -89,9 +113,10 @@ def manage_objects():
         return jsonify({'status': 'ok'})
 
 # --- XARAJATLAR ---
-
 @app.route('/api/expenses/<path:nomi>', methods=['GET'])
 def get_expenses(nomi):
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Ruxsat etilmagan'}), 401
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -102,6 +127,8 @@ def get_expenses(nomi):
 
 @app.route('/api/expenses', methods=['POST', 'PUT', 'DELETE'])
 def manage_expenses():
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Ruxsat etilmagan'}), 401
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -137,9 +164,10 @@ def manage_expenses():
         return jsonify({'status': 'ok'})
 
 # --- CHEK YUKLASH ---
-
 @app.route('/api/upload-receipt', methods=['POST'])
 def upload_receipt():
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Ruxsat etilmagan'}), 401
     if 'chek' not in request.files:
         return jsonify({'error': 'Fayl topilmadi'}), 400
     
@@ -167,9 +195,10 @@ def upload_receipt():
     return jsonify({'error': 'Xatolik yuz berdi'}), 400
 
 # --- HISOBOT VA EXCEL ---
-
 @app.route('/api/report', methods=['GET'])
 def get_report():
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Ruxsat etilmagan'}), 401
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -180,6 +209,8 @@ def get_report():
 
 @app.route('/download/excel', methods=['GET'])
 def download_all_excel():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     conn = sqlite3.connect(DB_NAME)
     df = pd.read_sql_query("SELECT obekt, nomi, summa, created_at FROM expenses", conn)
     conn.close()
@@ -190,6 +221,8 @@ def download_all_excel():
 
 @app.route('/api/expenses/<path:nomi>/excel', methods=['GET'])
 def download_object_excel(nomi):
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Ruxsat etilmagan'}), 401
     conn = sqlite3.connect(DB_NAME)
     df = pd.read_sql_query("SELECT nomi, summa, created_at FROM expenses WHERE obekt = ?", conn, params=(nomi,))
     conn.close()
