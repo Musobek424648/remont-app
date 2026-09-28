@@ -2,7 +2,7 @@ function loadObjectExpenses(nomi) {
             fetch("/api/expenses/" + encodeURIComponent(nomi))
                 .then(res => res.json())
                 .then(data => {
-                    const container = document.getElementById("object-expenses-table-body"); // Endi bu konteyner vazifasini bajaradi
+                    const container = document.getElementById("object-expenses-table-body");
                     container.innerHTML = "";
                     let totalSum = 0;
 
@@ -12,13 +12,12 @@ function loadObjectExpenses(nomi) {
                         return;
                     }
 
-                    // Sanalar bo'yicha guruhlash (Grouping by date)
+                    // Sanalar bo'yicha guruhlash
                     const groupedByDate = {};
                     data.forEach(exp => {
                         totalSum += Number(exp.summa || 0);
                         let dateKey = "Sanasiz";
                         if (exp.created_at) {
-                            // Faqat sana qismini olamiz (YYYY-MM-DD yoki o'zbekchaformatda)
                             const d = new Date(exp.created_at);
                             dateKey = d.toLocaleDateString('uz-UZ', { year: 'numeric', month: 'long', day: 'numeric' });
                         }
