@@ -160,20 +160,10 @@
 
                     <div class="card p-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="text-info m-0">Xarajatlar tarixi</h6>
+                            <h6 class="text-info m-0">Xarajatlar tarixi (Kunlik)</h6>
                         </div>
-                        <div class="table-responsive table-container">
-                            <table class="table table-striped table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Sana va Vaqt</th>
-                                        <th>Xarajat Nomi</th>
-                                        <th class="text-end">Summa (so'm)</th>
-                                        <th class="text-center" style="width: 120px;">Amallar</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="object-expenses-table-body"></tbody>
-                            </table>
+                        <div id="days-tables-container">
+                            <div class="text-center text-muted p-3">Yuklanmoqda...</div>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded text-dark fw-bold">
                             <span>Jami Xarajat:</span>
@@ -306,36 +296,80 @@
             fetch("/api/expenses/" + encodeURIComponent(nomi))
                 .then(res => res.json())
                 .then(data => {
-                    const tbody = document.getElementById("object-expenses-table-body");
-                    tbody.innerHTML = "";
+                    const daysContainer = document.getElementById("days-tables-container");
+                    daysContainer.innerHTML = "";
                     let totalSum = 0;
 
                     if (!data || data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Hali xarajat yo`q</td></tr>';
+                        daysContainer.innerHTML = '<div class="text-center text-muted p-3">Hali xarajat yo`q</div>';
                         document.getElementById("total-object-expense").innerText = "0 so'm";
                         return;
                     }
 
+                    // Sanalar bo'yicha guruhlash
+                    const groupedByDate = {};
                     data.forEach(exp => {
                         totalSum += Number(exp.summa || 0);
-                        let dateStr = "-";
+                        let dateKey = "Sanasiz";
                         if (exp.created_at) {
                             const d = new Date(exp.created_at);
-                            dateStr = d.toLocaleDateString('uz-UZ') + " " + d.toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'});
+                            dateKey = d.toLocaleDateString('uz-UZ', { year: 'numeric', month: 'long', day: 'numeric' });
                         }
-
-                        const tr = document.createElement("tr");
-                        tr.innerHTML = `
-                            <td class="text-secondary small">${dateStr}</td>
-                            <td><strong class="text-dark">${exp.nomi}</strong></td>
-                            <td class="text-end text-success fw-bold">${Number(exp.summa).toLocaleString()} so'm</td>
-                            <td class="text-center">
-                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editExpense(${exp.id}, '${exp.nomi}', ${exp.summa})">✏️</button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteExpense(${exp.id})">🗑️</button>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
+                        if (!groupedByDate[dateKey]) {
+                            groupedByDate[dateKey] = [];
+                        }
+                        groupedByDate[dateKey].push(exp);
                     });
+
+                    // Har bir sana uchun alohida jadval qurish
+                    for (const [dateStr, items] of Object.entries(groupedByDate)) {
+                        let dayTotal = items.reduce((sum, item) => sum + Number(item.summa || 0), 0);
+
+                        const dateSection = document.createElement("div");
+                        dateSection.className = "mb-4";
+                        
+                        let rowsHtml = "";
+                        items.forEach(exp => {
+                            let timeStr = "";
+                            if (exp.created_at) {
+                                const d = new Date(exp.created_at);
+                                timeStr = d.toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'});
+                            }
+
+                            rowsHtml += `
+                                <tr>
+                                    <td class="text-secondary small" style="width: 100px;">${timeStr}</td>
+                                    <td><strong class="text-dark">${exp.nomi}</strong></td>
+                                    <td class="text-end text-success fw-bold">${Number(exp.summa).toLocaleString()} so'm</td>
+                                    <td class="text-center" style="width: 120px;">
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editExpense(${exp.id}, '${exp.nomi}', ${exp.summa})">✏️</button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteExpense(${exp.id})">🗑️</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+
+                        dateSection.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center bg-dark p-2 rounded-top border border-secondary border-bottom-0">
+                                <span class="fw-bold text-warning">📅 ${dateStr}</span>
+                                <span class="badge bg-success fs-6">Kunlik jami: ${dayTotal.toLocaleString()} so'm</span>
+                            </div>
+                            <div class="table-responsive table-container">
+                                <table class="table table-striped table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Vaqt</th>
+                                            <th>Xarajat Nomi</th>
+                                            <th class="text-end">Summa (so'm)</th>
+                                            <th class="text-center">Amallar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${rowsHtml}</tbody>
+                                </table>
+                            </div>
+                        `;
+                        daysContainer.appendChild(dateSection);
+                    }
 
                     document.getElementById("total-object-expense").innerText = totalSum.toLocaleString() + " so'm";
                 });
